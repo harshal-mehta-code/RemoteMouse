@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: #f5f5f7;
+            margin: 0;
+            padding: 20px;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+        }
+        h2 { margin-top: 0; color: #1d1d1f; font-size: 18px; font-weight: 600; }
+        p { color: #86868b; font-size: 13px; line-height: 1.4; margin-bottom: 24px; max-width: 240px; }
+        
+        #qr-container {
+            background-color: white;
+            padding: 16px;
+            border-radius: 16px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+            margin-bottom: 24px;
+            width: 200px;
+            height: 200px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        #qr-img {
+            width: 100%;
+            height: 100%;
+            display: none;
+        }
+        
+        #loader {
+            width: 20px; height: 20px;
+            border: 2px solid #ccc;
+            border-top: 2px solid #0066cc;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+        #url-container { width: 100%; margin-bottom: 20px; }
+        #url-label { font-size: 10px; color: #86868b; margin-bottom: 6px; letter-spacing: 0.5px; }
+        #url {
+            font-family: monospace;
+            background: #ffffff;
+            padding: 10px;
+            border-radius: 8px;
+            font-size: 13px;
+            color: #0066cc;
+            word-break: break-all;
+            border: 1px solid #d2d2d7;
+            cursor: pointer;
+        }
+
+        .footer { font-size: 11px; color: #86868b; margin-top: auto; }
+    </style>
+</head>
+<body>
+    <h2>Remote Touchpad</h2>
+    <p>Scan to connect instantly from your iPhone.</p>
+    
+    <div id="qr-container">
+        <div id="loader"></div>
+        <img id="qr-img" alt="QR Code">
+    </div>
+
+    <div id="url-container">
+        <div id="url-label">Direct URL</div>
+        <div id="url">Detecting IP...</div>
+    </div>
+
+    <div class="footer">
+        Ensure your iPhone is on the same Wi-Fi.
+    </div>
+
+    <script>
+        const { ipcRenderer } = require('electron');
+        
+        function requestInfo() {
+            console.log('Requesting connection info...');
+            ipcRenderer.send('get-connection-info');
+        }
+
+        // Keep requesting until we get it (polling every 100ms)
+        const pollInterval = setInterval(requestInfo, 100);
+        
+        ipcRenderer.on('connection-info', (event, info) => {
+            console.log('Received connection info!');
+            clearInterval(pollInterval);
+            
+            const qrImg = document.getElementById('qr-img');
+            const loader = document.getElementById('loader');
+            const urlDiv = document.getElementById('url');
+            
+            if (info.qrCodeDataUrl) {
+                qrImg.src = info.qrCodeDataUrl;
+                qrImg.onload = () => {
+                    loader.style.display = 'none';
+                    qrImg.style.display = 'block';
+                };
+            }
+            
+            urlDiv.innerText = info.url;
+        });
+    </script>
+</body>
+</html>
