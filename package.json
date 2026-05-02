@@ -1,19 +1,51 @@
 {
-  "name": "geminicli_test",
+  "name": "remotemouse",
+  "productName": "RemoteMouse",
   "version": "1.0.0",
   "description": "",
   "main": "main.js",
   "scripts": {
-    "start": "node server/index.js",
+    "start": "electron-forge start",
+    "package": "electron-forge package",
+    "make": "electron-forge make",
     "dev": "electron .",
     "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "config": {
+    "forge": {
+      "packagerConfig": {
+        "name": "RemoteMouse",
+        "asar": true,
+        "icon": "iconTemplate"
+      },
+      "rebuildConfig": {},
+      "makers": [
+        {
+          "name": "@electron-forge/maker-zip",
+          "platforms": [
+            "darwin"
+          ]
+        },
+        {
+          "name": "@electron-forge/maker-dmg",
+          "config": {
+            "name": "RemoteMouse"
+          }
+        }
+      ],
+      "plugins": [
+        {
+          "name": "@electron-forge/plugin-auto-unpack-natives",
+          "config": {}
+        }
+      ]
+    }
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "type": "commonjs",
   "dependencies": {
-    "electron": "^34.5.8",
     "express": "^5.2.1",
     "menubar": "^9.5.2",
     "mouse-macos": "^0.2.1",
@@ -21,5 +53,12 @@
     "qrcode": "^1.5.4",
     "robotjs": "^0.7.0",
     "socket.io": "^4.8.3"
+  },
+  "devDependencies": {
+    "@electron-forge/cli": "^7.11.1",
+    "@electron-forge/maker-dmg": "^7.11.1",
+    "@electron-forge/maker-zip": "^7.11.1",
+    "@electron-forge/plugin-auto-unpack-natives": "^7.11.1",
+    "electron": "^34.5.8"
   }
 }

@@ -14,6 +14,11 @@ let startTouchTime = 0;
 let moveCount = 0;
 let fingerCount = 0;
 
+// Advanced state
+let lastTapTime = 0;
+let isDragging = false;
+let dragTimeout = null;
+
 // Movement buffer for animation frame
 let pendingDx = 0;
 let pendingDy = 0;
@@ -75,7 +80,8 @@ function update() {
     const sensitivity = parseFloat(sensitivitySlider.value);
     
     if (pendingDx !== 0 || pendingDy !== 0) {
-        socket.emit('mouseMove', { dx: pendingDx * sensitivity, dy: pendingDy * sensitivity });
+        const eventName = isDragging ? 'mouseDrag' : 'mouseMove';
+        socket.emit(eventName, { dx: pendingDx * sensitivity, dy: pendingDy * sensitivity });
         pendingDx = 0;
         pendingDy = 0;
     }
@@ -94,7 +100,7 @@ touchpad.addEventListener('touchstart', (e) => {
     if (!socket.connected) return;
 
     isTouching = true;
-    touchpad.style.backgroundColor = '#3c3c3c'; // Visual feedback
+    touchpad.style.backgroundColor = '#3c3c3c'; 
     fingerCount = e.touches.length;
     
     const touch = e.touches[0];
@@ -103,6 +109,18 @@ touchpad.addEventListener('touchstart', (e) => {
     
     startTouchTime = Date.now();
     moveCount = 0;
+
+    // Handle Long Press for Dragging
+    if (fingerCount === 1) {
+        dragTimeout = setTimeout(() => {
+            if (moveCount < 5 && isTouching) {
+                isDragging = true;
+                socket.emit('mouseDown', { button: 'left' });
+                touchpad.style.backgroundColor = '#007aff'; // Blue feedback for dragging
+                if (navigator.vibrate) navigator.vibrate(50);
+            }
+        }, 500);
+    }
 });
 
 touchpad.addEventListener('touchmove', (e) => {
@@ -118,12 +136,16 @@ touchpad.addEventListener('touchmove', (e) => {
     
     moveCount++;
     
+    // Cancel drag timeout if we moved too much before it triggered
+    if (moveCount > 5 && dragTimeout) {
+        clearTimeout(dragTimeout);
+        dragTimeout = null;
+    }
+
     if (e.touches.length === 1) {
-        // Accumulate raw movement; sensitivity applied in update loop
         pendingDx += dx;
         pendingDy += dy;
     } else if (e.touches.length === 2) {
-        // Accumulate raw scroll; sensitivity applied in update loop
         pendingScrollY += dy;
     }
 });
@@ -132,12 +154,27 @@ touchpad.addEventListener('touchend', (e) => {
     e.preventDefault();
     if (!isTouching) return;
     
+    if (dragTimeout) {
+        clearTimeout(dragTimeout);
+        dragTimeout = null;
+    }
+
     const duration = Date.now() - startTouchTime;
+    const now = Date.now();
     
-    // Increased movement threshold for clicks to avoid accidental clicks while moving
-    if (socket.connected && duration < 300 && moveCount < 10) {
+    if (isDragging) {
+        socket.emit('mouseUp', { button: 'left' });
+        isDragging = false;
+    } else if (socket.connected && duration < 300 && moveCount < 10) {
         if (fingerCount === 1) {
-            socket.emit('mouseClick', { button: 'left' });
+            // Check for double tap
+            if (now - lastTapTime < 300) {
+                socket.emit('mouseClick', { button: 'left', double: true });
+                lastTapTime = 0; // Reset
+            } else {
+                socket.emit('mouseClick', { button: 'left' });
+                lastTapTime = now;
+            }
         } else if (fingerCount === 2) {
             socket.emit('mouseClick', { button: 'right' });
         }
@@ -145,7 +182,7 @@ touchpad.addEventListener('touchend', (e) => {
     
     if (e.touches.length === 0) {
         isTouching = false;
-        touchpad.style.backgroundColor = '#2c2c2c'; // Reset visual feedback
+        touchpad.style.backgroundColor = '#2c2c2c'; 
         fingerCount = 0;
         pendingDx = 0;
         pendingDy = 0;

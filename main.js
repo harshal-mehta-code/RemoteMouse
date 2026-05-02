@@ -33,6 +33,10 @@ ipcMain.on('get-connection-info', (event) => {
     event.reply('connection-info', { url: URL, qrCodeDataUrl: cachedQRCode });
 });
 
+ipcMain.on('quit-app', () => {
+    app.quit();
+});
+
 const mb = menubar({
     index: `file://${path.join(__dirname, 'tray-popover.html')}`,
     browserWindow: {
@@ -40,6 +44,10 @@ const mb = menubar({
         height: 450,
         resizable: false,
         show: false,
+        frame: false,
+        transparent: true,
+        vibrancy: 'under-window',
+        visualEffectState: 'active',
         webPreferences: {
             nodeIntegration: true,
             contextIsolation: false
@@ -52,6 +60,16 @@ const mb = menubar({
 
 mb.on('ready', () => {
     console.log('--- REMOTE TOUCHPAD READY ---');
+    
+    // Add standard context menu on right click
+    const { Menu } = require('electron');
+    const contextMenu = Menu.buildFromTemplate([
+        { label: 'Quit RemoteMouse', click: () => { app.quit(); } }
+    ]);
+    mb.tray.on('right-click', () => {
+        mb.tray.popUpContextMenu(contextMenu);
+    });
+
     try {
         startServer(PORT);
         console.log(`Server live at ${URL}`);

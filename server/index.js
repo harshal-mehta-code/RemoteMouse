@@ -40,12 +40,25 @@ function startServer(port = 3000) {
             robot.moveMouse(currentPos.x + data.dx, currentPos.y + data.dy);
         });
 
+        socket.on('mouseDrag', (data) => {
+            const currentPos = robot.getMousePos();
+            robot.dragMouse(currentPos.x + data.dx, currentPos.y + data.dy);
+        });
+
         socket.on('mouseClick', (data) => {
-            if (data.button === 'left') {
-                robot.mouseClick('left');
-            } else if (data.button === 'right') {
-                robot.mouseClick('right', false);
+            if (data.double) {
+                robot.mouseClick(data.button || 'left', true);
+            } else {
+                robot.mouseClick(data.button || 'left');
             }
+        });
+
+        socket.on('mouseDown', (data) => {
+            robot.mouseToggle('down', data.button || 'left');
+        });
+
+        socket.on('mouseUp', (data) => {
+            robot.mouseToggle('up', data.button || 'left');
         });
 
         socket.on('mouseScroll', (data) => {
