@@ -1,5 +1,5 @@
 const { menubar } = require('menubar');
-const { app, ipcMain, screen } = require('electron');
+const { app, ipcMain, screen, nativeImage } = require('electron');
 const path = require('path');
 const QRCode = require('qrcode');
 const os = require('os');
@@ -37,11 +37,15 @@ ipcMain.on('quit-app', () => {
     app.quit();
 });
 
+const iconPath = path.join(__dirname, 'iconTemplate.png');
+const trayIcon = nativeImage.createFromPath(iconPath);
+trayIcon.setTemplateImage(true);
+
 const mb = menubar({
     index: `file://${path.join(__dirname, 'tray-popover.html')}`,
     browserWindow: {
         width: 300,
-        height: 450,
+        height: 500,
         resizable: false,
         show: false,
         frame: false,
@@ -53,7 +57,7 @@ const mb = menubar({
             contextIsolation: false
         }
     },
-    icon: path.join(__dirname, 'iconTemplate.png'),
+    icon: trayIcon,
     preloadWindow: true,
     showDockIcon: false
 });

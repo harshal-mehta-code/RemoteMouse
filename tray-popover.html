@@ -58,9 +58,24 @@
             word-break: break-all;
             border: 1px solid #d2d2d7;
             cursor: pointer;
+            transition: background 0.2s;
+            position: relative;
+        }
+        #url:active { background: #f0f0f0; }
+        #copy-toast {
+            position: absolute;
+            top: -25px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0,0,0,0.7);
+            color: white;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 10px;
+            display: none;
         }
 
-        .footer { font-size: 11px; color: #86868b; margin-top: auto; padding-bottom: 10px; }
+        .footer { font-size: 11px; color: #86868b; margin-top: 20px; padding-bottom: 20px; }
         .quit-btn {
             font-size: 12px;
             color: #ff3b30;
@@ -82,8 +97,11 @@
     </div>
 
     <div id="url-container">
-        <div id="url-label">Direct URL</div>
-        <div id="url">Detecting IP...</div>
+        <div id="url-label">Direct URL (Click to copy)</div>
+        <div id="url" onclick="copyUrl()">
+            <span id="url-text">Detecting IP...</span>
+            <div id="copy-toast">Copied!</div>
+        </div>
     </div>
 
     <div class="footer">
@@ -93,10 +111,20 @@
     </div>
 
     <script>
-        const { ipcRenderer } = require('electron');
+        const { ipcRenderer, clipboard } = require('electron');
         
         function quitApp() {
             ipcRenderer.send('quit-app');
+        }
+
+        function copyUrl() {
+            const urlText = document.getElementById('url-text').innerText;
+            if (urlText !== 'Detecting IP...') {
+                clipboard.writeText(urlText);
+                const toast = document.getElementById('copy-toast');
+                toast.style.display = 'block';
+                setTimeout(() => { toast.style.display = 'none'; }, 2000);
+            }
         }
         
         function requestInfo() {
@@ -113,7 +141,7 @@
             
             const qrImg = document.getElementById('qr-img');
             const loader = document.getElementById('loader');
-            const urlDiv = document.getElementById('url');
+            const urlText = document.getElementById('url-text');
             
             if (info.qrCodeDataUrl) {
                 qrImg.src = info.qrCodeDataUrl;
@@ -123,7 +151,7 @@
                 };
             }
             
-            urlDiv.innerText = info.url;
+            urlText.innerText = info.url;
         });
     </script>
 </body>
