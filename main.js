@@ -45,7 +45,7 @@ const mb = menubar({
     index: `file://${path.join(__dirname, 'tray-popover.html')}`,
     browserWindow: {
         width: 300,
-        height: 500,
+        height: 550,
         resizable: false,
         show: false,
         frame: false,
@@ -65,6 +65,11 @@ const mb = menubar({
 mb.on('ready', () => {
     console.log('--- REMOTE TOUCHPAD READY ---');
     
+    // Ensure the icon is treated as a template image for macOS
+    const trayIcon = nativeImage.createFromPath(path.join(__dirname, 'iconTemplate.png'));
+    trayIcon.setTemplateImage(true);
+    mb.tray.setImage(trayIcon);
+
     // Add standard context menu on right click
     const { Menu } = require('electron');
     const contextMenu = Menu.buildFromTemplate([
