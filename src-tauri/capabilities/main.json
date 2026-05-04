@@ -1,0 +1,13 @@
+{
+  "identifier": "main-capability",
+  "description": "Allow main window to call connection info",
+  "windows": ["main"],
+  "permissions": [
+    "core:default",
+    "core:app:default",
+    "core:window:default",
+    "core:tray:default",
+    "core:event:default",
+    "core:webview:default"
+  ]
+}
