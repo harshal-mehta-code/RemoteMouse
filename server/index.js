@@ -35,7 +35,7 @@ function startServer(port = 3000) {
         permissions.askForAccessibilityAccess();
     }
 
-    const publicDir = path.join(__dirname, '../public');
+    const publicDir = path.join(__dirname, 'public');
 
     const server = http.createServer((req, res) => {
         let filePath = path.join(publicDir, req.url === '/' ? 'index.html' : req.url);
