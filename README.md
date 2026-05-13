@@ -20,10 +20,10 @@ RemoteMouse transforms your iPhone (or any smartphone) into a high-precision, wi
 ### Prerequisites
 
 - **macOS:** Designed and tested for macOS.
-- **Node.js:** Version 16 or higher.
+- **Node.js:** Version 18 or higher.
 - **Permissions:** The app requires **Accessibility** permissions to control the mouse. You will be prompted on the first run.
 
-### Installation & Development
+### Development
 
 1. **Clone the repo:**
    ```bash
@@ -38,27 +38,28 @@ RemoteMouse transforms your iPhone (or any smartphone) into a high-precision, wi
 
 3. **Run in development mode:**
    ```bash
-   npm start
+   npm run dev
    ```
 
 ## 📦 Building the App
 
-To create a polished, standalone `.app` or `.dmg` that you can run without the terminal:
+Our build pipeline uses `esbuild` to bundle the entire app into a tiny ~30KB core before packaging.
 
-1. **Generate the distributable:**
+1. **Generate the distributable (DMG):**
    ```bash
    npm run make
    ```
 
 2. **Locate the installer:**
-   The generated DMG will be located in the `out/make/` folder. Open `RemoteMouse.dmg` and drag the app to your Applications folder.
+   The generated DMG will be in `out/make/RemoteMouse.dmg`.
 
 ## 🛠️ Tech Stack
 
-- **Frontend:** HTML5 Canvas/Touch API & Socket.io-client.
-- **Backend:** Node.js, Express, Socket.io.
+- **Frontend:** HTML5 Touch API & Native WebSockets.
+- **Backend:** Node.js, Native HTTP Server, Lightweight `ws` library.
 - **Desktop Wrapper:** Electron & Menubar.
-- **Automation:** RobotJS for native mouse/keyboard events.
+- **Bundling:** `esbuild` for ultra-fast, minified code delivery.
+- **Automation:** RobotJS & `mouse-macos` for native hardware interaction.
 
 ## 📄 License
 
