@@ -3,12 +3,13 @@
   "productName": "RemoteMouse",
   "version": "1.0.0",
   "description": "",
-  "main": "main.js",
+  "main": "dist/main.js",
   "scripts": {
-    "start": "electron-forge start",
-    "package": "electron-forge package",
-    "make": "electron-forge make",
-    "dev": "electron .",
+    "start": "node build.js && electron dist/main.js",
+    "build": "node build.js",
+    "package": "node build.js && electron-forge package",
+    "make": "node build.js && electron-forge make",
+    "dev": "node build.js && electron dist/main.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "config": {
@@ -16,7 +17,18 @@
       "packagerConfig": {
         "name": "RemoteMouse",
         "asar": true,
-        "icon": "iconTemplate"
+        "icon": "iconTemplate",
+        "ignore": [
+          "^/\\.git$",
+          "^/node_modules$",
+          "^/src-tauri$",
+          "^/public$",
+          "^/server$",
+          "^/main\\.js$",
+          "^/build\\.js$",
+          "^/README\\.md$",
+          "^/tray-popover\\.html$"
+        ]
       },
       "rebuildConfig": {},
       "makers": [
@@ -46,19 +58,19 @@
   "license": "ISC",
   "type": "commonjs",
   "dependencies": {
-    "express": "^5.2.1",
     "menubar": "^9.5.2",
     "mouse-macos": "^0.2.1",
     "node-mac-permissions": "^2.5.0",
     "qrcode": "^1.5.4",
     "robotjs": "^0.7.0",
-    "socket.io": "^4.8.3"
+    "ws": "^8.18.0"
   },
   "devDependencies": {
     "@electron-forge/cli": "^7.11.1",
     "@electron-forge/maker-dmg": "^7.11.1",
     "@electron-forge/maker-zip": "^7.11.1",
     "@electron-forge/plugin-auto-unpack-natives": "^7.11.1",
-    "electron": "^34.5.8"
+    "electron": "^34.5.8",
+    "esbuild": "^0.28.0"
   }
 }
