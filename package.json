@@ -20,7 +20,6 @@
         "icon": "iconTemplate",
         "ignore": [
           "^/\\.git$",
-          "^/node_modules$",
           "^/src-tauri$",
           "^/public$",
           "^/server$",

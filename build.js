@@ -12,12 +12,9 @@ async function build() {
     platform: 'node',
     external: [
         'electron',
-        'menubar',
         'robotjs',
         'node-mac-permissions',
-        'mouse-macos',
-        'ws',
-        'qrcode'
+        'mouse-macos'
     ],
   };
 
