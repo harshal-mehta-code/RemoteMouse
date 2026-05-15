@@ -54,11 +54,13 @@ async function build() {
     main: 'main.js',
     dependencies: {
         'menubar': originalPkg.dependencies.menubar,
-        'mouse-macos': originalPkg.dependencies['mouse-macos'],
-        'node-mac-permissions': originalPkg.dependencies['node-mac-permissions'],
         'qrcode': originalPkg.dependencies.qrcode,
         'robotjs': originalPkg.dependencies.robotjs,
         'ws': originalPkg.dependencies.ws
+    },
+    optionalDependencies: {
+        'mouse-macos': originalPkg.dependencies['mouse-macos'],
+        'node-mac-permissions': originalPkg.dependencies['node-mac-permissions']
     }
   };
   fs.writeFileSync('dist/package.json', JSON.stringify(distPkg, null, 2));

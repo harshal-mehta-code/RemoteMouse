@@ -4,18 +4,31 @@ const path = require('path');
 const os = require('os');
 const { WebSocketServer } = require('ws');
 const robot = require('robotjs');
-const permissions = require('node-mac-permissions');
 
 function getIPAddress() {
     const interfaces = os.networkInterfaces();
+    let backupAddress = 'localhost';
+    
+    // Prioritize 192.168.x.x addresses (typical for home LANs)
     for (const name of Object.keys(interfaces)) {
+        // Skip common VPN or virtual interface names
+        if (name.toLowerCase().includes('vpn') || 
+            name.toLowerCase().includes('nord') || 
+            name.toLowerCase().includes('twingate') || 
+            name.toLowerCase().includes('virtual')) {
+            continue;
+        }
+
         for (const iface of interfaces[name]) {
             if (iface.family === 'IPv4' && !iface.internal) {
-                return iface.address;
+                if (iface.address.startsWith('192.168.')) {
+                    return iface.address;
+                }
+                backupAddress = iface.address;
             }
         }
     }
-    return 'localhost';
+    return backupAddress;
 }
 
 const MIME_TYPES = {
@@ -28,11 +41,18 @@ const MIME_TYPES = {
 };
 
 function startServer(port = 3000) {
-    // Check accessibility permissions
-    const status = permissions.getAuthStatus('accessibility');
-    if (status !== 'authorized') {
-        console.log('Asking for accessibility permission...');
-        permissions.askForAccessibilityAccess();
+    // Check accessibility permissions on macOS
+    if (process.platform === 'darwin') {
+        try {
+            const permissions = require('node-mac-permissions');
+            const status = permissions.getAuthStatus('accessibility');
+            if (status !== 'authorized') {
+                console.log('Asking for accessibility permission...');
+                permissions.askForAccessibilityAccess();
+            }
+        } catch (err) {
+            console.warn('Could not load node-mac-permissions:', err.message);
+        }
     }
 
     const publicDir = path.join(__dirname, 'public');
