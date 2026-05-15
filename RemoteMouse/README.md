@@ -1,53 +1,40 @@
 # RemoteMouse 🖱️📱
 
-RemoteMouse transforms your iPhone (or any smartphone) into a high-precision, wireless trackpad for your Mac. Designed as a lightweight macOS menubar app, it allows you to control your cursor, click, scroll, and type remotely without installing any mobile apps.
+RemoteMouse transforms your smartphone into a high-precision, wireless trackpad for your Mac or Windows PC. It allows you to control your cursor, click, scroll, and type remotely without installing any mobile apps.
 
 ---
 
-### 📥 [**Download the Latest Release (DMG)**](https://github.com/harshal-mehta-code/RemoteMouse/releases/latest)
-*Just download, drag to Applications, and you're ready to go!*
+### 📥 [**Download the Latest Release**](https://github.com/harshal-mehta-code/RemoteMouse/releases/latest)
+*Just download, run, and you're ready to go!*
 
 ---
 
 ## ✨ Features
 
-- **Instant Connection:** No mobile app required. Just scan the QR code from the menubar popover.
+- **Cross-Platform:** Full support for **macOS** and **Windows**.
+- **Instant Connection:** No mobile app required. Just scan the QR code from the tray/menubar popover.
 - **Advanced Touch Controls:**
   - **Single Tap:** Left click.
   - **Two-Finger Tap:** Right click.
   - **Double Tap:** Standard double-click action.
   - **Long Press & Drag:** Long-press until the touchpad turns blue to grab and drag windows or files.
   - **Two-Finger Scroll:** Smooth vertical scrolling.
-- **Remote Keyboard:** Type text directly from your phone to your Mac.
-- **Native macOS Feel:** Frosted glass (vibrancy) UI, menubar integration, and Dark Mode support.
-- **Secure & Local:** Works entirely over your local Wi-Fi network.
+- **Remote Keyboard:** Type text directly from your phone to your PC.
+- **Modern UI:** Integrated tray icon, QR pairing, and responsive web client.
+- **Smart Networking:** Automatically detects your local IP and ignores VPN interfaces (NordVPN, etc.).
 
 ## 🚀 Getting Started
 
-### Prerequisites
+### Installation
+- **Windows:** Download the zip from the [Releases](https://github.com/harshal-mehta-code/RemoteMouse/releases) page, extract it, and run `RemoteMouse.exe`.
+- **macOS:** Download the `.dmg`, open it, and drag the app to your Applications folder.
 
-- **macOS:** Designed and tested for macOS.
-- **Node.js:** Version 18 or higher (only required for development).
-- **Permissions:** The app requires **Accessibility** permissions to control the mouse. You will be prompted on the first run.
-
-## 📦 Building the App (For Developers)
-
-Our build pipeline uses `esbuild` to bundle the entire app into a tiny ~30KB core before packaging.
-
-1. **Clone and Install:**
-   ```bash
-   git clone https://github.com/harshal-mehta-code/RemoteMouse.git
-   cd RemoteMouse
-   npm install
-   ```
-
-2. **Generate the distributable (DMG):**
-   ```bash
-   npm run make
-   ```
-
-3. **Locate the installer:**
-   The generated DMG will be in `out/make/RemoteMouse.dmg`.
+### Prerequisites (For Developers)
+- **Node.js:** Version 18 or higher.
+- **Windows Build Tools:** Required for `robotjs`. Run `npm install --global windows-build-tools` or install C++ tools via Visual Studio.
+- **Permissions:** 
+  - **macOS:** Requires **Accessibility** permissions (prompted on first run).
+  - **Windows:** May require Firewall permission to allow local network communication.
 
 ## 🛠️ Tech Stack
 
@@ -55,7 +42,7 @@ Our build pipeline uses `esbuild` to bundle the entire app into a tiny ~30KB cor
 - **Backend:** Node.js, Native HTTP Server, Lightweight `ws` library.
 - **Desktop Wrapper:** Electron & Menubar.
 - **Bundling:** `esbuild` for ultra-fast, minified code delivery.
-- **Automation:** RobotJS & `mouse-macos` for native hardware interaction.
+- **Automation:** RobotJS for native hardware interaction.
 
 ## 📄 License
 
