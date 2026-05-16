@@ -1,8 +1,9 @@
 {
   "name": "remotemouse",
   "productName": "RemoteMouse",
-  "version": "1.0.0",
-  "description": "",
+  "version": "2.1.3",
+  "description": "Remote control your computer from your smartphone with ultra-low latency.",
+  "author": "Harshal Mehta",
   "main": "dist/main.js",
   "scripts": {
     "dev": "tauri dev",
@@ -35,20 +36,13 @@
       "makers": [
         {
           "name": "@electron-forge/maker-zip",
-          "platforms": [
-            "darwin",
-            "win32"
-          ]
+          "platforms": ["darwin", "win32"]
         },
         {
           "name": "@electron-forge/maker-dmg",
           "config": {
             "name": "RemoteMouse"
           }
-        },
-        {
-          "name": "@electron-forge/maker-squirrel",
-          "config": {}
         }
       ],
       "plugins": [
@@ -60,8 +54,7 @@
     }
   },
   "keywords": [],
-  "author": "",
-  "license": "ISC",
+  "license": "MIT",
   "type": "commonjs",
   "dependencies": {
     "menubar": "^5.2.3",
