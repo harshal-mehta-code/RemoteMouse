@@ -91,80 +91,99 @@
         <button class="quit-btn" onclick="quitApp()">Quit App</button>
     </div>
 
-    <script src="qrcode.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <script>
         function displayError(msg) {
             const log = document.getElementById('error-log');
-            log.innerText = msg;
-            console.error(msg);
+            if (log) {
+                log.innerText = msg;
+                log.style.display = 'block';
+            }
+            console.error("APP_ERROR: " + msg);
         }
 
-        const tauri = window.__TAURI__;
-        if (!tauri) {
-            displayError("Tauri API not detected. This window might not be running inside Tauri.");
-        }
+        let tauriInvoke = null;
 
-        const invoke = tauri ? tauri.core.invoke : null;
-        const getCurrentWindow = tauri ? tauri.window.getCurrentWindow : null;
-        
-        if (tauri && getCurrentWindow) {
-            const appWindow = getCurrentWindow();
-            // Hide window on blur
-            appWindow.onBlur(() => {
-                appWindow.hide();
-            });
-        }
+        window.onerror = function(msg, url, line) {
+            displayError("JS Error: " + msg + " at " + line);
+            return false;
+        };
+
+        // Initialize Tauri API
+        (async function() {
+            const tauri = window.__TAURI__;
+            if (!tauri) {
+                // Wait a bit more if not found immediately
+                await new Promise(r => setTimeout(r, 200));
+            }
+            
+            const finalTauri = window.__TAURI__;
+            if (!finalTauri) {
+                displayError("Tauri API not found.");
+                return;
+            }
+
+            tauriInvoke = finalTauri.core ? finalTauri.core.invoke : finalTauri.invoke;
+            const getCurrentWindow = finalTauri.window ? finalTauri.window.getCurrentWindow : null;
+
+            if (getCurrentWindow) {
+                try {
+                    const appWindow = getCurrentWindow();
+                    // Robust blur handling
+                    if (appWindow && appWindow.listen) {
+                        appWindow.listen('tauri://blur', () => {
+                            appWindow.hide().catch(console.error);
+                        });
+                    }
+                } catch (e) {
+                    console.warn("Blur listener failed", e);
+                }
+            }
+
+            if (tauriInvoke) {
+                try {
+                    const info = await tauriInvoke('get_connection_info');
+                    document.getElementById('url-text').innerText = info.url;
+                    
+                    const QRCodeLib = window.QRCode || (typeof QRCode !== 'undefined' ? QRCode : null);
+                    if (QRCodeLib) {
+                        const qrContainer = document.getElementById("qrcode");
+                        qrContainer.innerHTML = ''; 
+                        new QRCodeLib(qrContainer, {
+                            text: info.url,
+                            width: 160,
+                            height: 160
+                        });
+                    }
+                } catch (err) {
+                    displayError("Init failed: " + err);
+                }
+            }
+        })();
 
         async function quitApp() {
-            if (tauri && tauri.process) {
-                await tauri.process.exit(0);
-            } else {
-                window.close();
+            try {
+                const tauri = window.__TAURI__;
+                const invoke = tauriInvoke || (tauri ? (tauri.core ? tauri.core.invoke : tauri.invoke) : null);
+                if (invoke) {
+                    await invoke('quit_app');
+                } else {
+                    window.close();
+                }
+            } catch (e) {
+                displayError("Quit failed: " + e);
             }
         }
 
         async function copyUrl() {
-            const urlText = document.getElementById('url-text').innerText;
-            if (urlText !== 'Detecting IP...') {
-                try {
-                    await navigator.clipboard.writeText(urlText);
-                    const toast = document.getElementById('copy-toast');
-                    toast.style.display = 'block';
-                    setTimeout(() => { toast.style.display = 'none'; }, 2000);
-                } catch (e) {
-                    displayError("Failed to copy: " + e);
-                }
+            const text = document.getElementById('url-text').innerText;
+            if (text && text !== 'Detecting IP...') {
+                await navigator.clipboard.writeText(text);
+                const toast = document.getElementById('copy-toast');
+                toast.style.display = 'block';
+                setTimeout(() => { toast.style.display = 'none'; }, 2000);
             }
         }
-        
-        async function init() {
-            if (!invoke) {
-                displayError("Cannot invoke Tauri commands.");
-                return;
-            }
-
-            try {
-                const info = await invoke('get_connection_info');
-                document.getElementById('url-text').innerText = info.url;
-                
-                if (window.QRCode) {
-                    new QRCode(document.getElementById("qrcode"), {
-                        text: info.url,
-                        width: 160,
-                        height: 160,
-                        colorDark : "#000000",
-                        colorLight : "#ffffff",
-                        correctLevel : QRCode.CorrectLevel.H
-                    });
-                } else {
-                    alert("QRCode library not loaded."); displayError("QRCode library not loaded.");
-                }
-            } catch (err) {
-                displayError("Init error: " + err);
-            }
-        }
-
-        init();
     </script>
 </body>
 </html>

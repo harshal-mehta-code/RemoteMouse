@@ -1,7 +1,7 @@
 {
   "productName": "RemoteMouse",
   "version": "2.0.0",
-  "identifier": "com.harshal.remotemouse",
+  "identifier": "com.remotemouse.app",
   "build": {
     "beforeDevCommand": "",
     "beforeBuildCommand": "",
@@ -19,6 +19,7 @@
         "alwaysOnTop": true,
         "visible": false,
         "transparent": true,
+        "devtools": true,
         "url": "tray-popover.html",
         "windowEffects": {
           "effects": [
@@ -38,6 +39,9 @@
   "bundle": {
     "active": true,
     "targets": "all",
+    "resources": [
+      "../public/*"
+    ],
     "icon": [
       "icons/32x32.png",
       "icons/128x128.png",

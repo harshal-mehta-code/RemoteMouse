@@ -26,7 +26,7 @@ let pendingScrollY = 0;
 
 function connect() {
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    const wsUrl = `${protocol}//${window.location.hostname}:3000/ws`;
+    const wsUrl = `${protocol}//${window.location.hostname}:3005/ws`;
     
     console.log("Connecting to:", wsUrl);
     socket = new WebSocket(wsUrl);
