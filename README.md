@@ -1,73 +1,83 @@
-# RemoteMouse 🖱️📱
+# 🖱️ RemoteMouse Pro
+[![Release](https://github.com/harshal-mehta-code/RemoteMouse/actions/workflows/release.yml/badge.svg)](https://github.com/harshal-mehta-code/RemoteMouse/actions/workflows/release.yml)
+[![Version](https://img.shields.io/github/v/tag/harshal-mehta-code/RemoteMouse?label=version&color=blue)](https://github.com/harshal-mehta-code/RemoteMouse/releases)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-RemoteMouse transforms your smartphone into a high-precision, wireless trackpad for your Mac or Windows PC. Control your cursor, click, scroll, and type remotely without installing any mobile apps.
-
----
-
-### 📥 [**Download the Latest Release**](https://github.com/harshal-mehta-code/RemoteMouse/releases/latest)
-*The new **v2.0 (Tauri)** release is now available—dropping the app size from **120MB** to just **7MB**!*
+**RemoteMouse Pro** is a high-performance, cross-platform utility that transforms your smartphone into a premium wireless touchpad and keyboard for your computer. Built with a focus on low latency, modern aesthetics, and dual-backend flexibility.
 
 ---
 
 ## ✨ Features
-
-- **High Performance:** v2 is built with **Rust**, featuring a dedicated input worker for zero-lag control.
-- **Ultra-Lightweight:** 94% smaller footprint compared to traditional Electron apps.
-- **Instant Connection:** No mobile app required. Just scan the QR code.
-- **Advanced Touch Controls:**
-  - **Single Tap:** Left click.
-  - **Two-Finger Tap:** Right click.
-  - **Double Tap:** Double-click.
-  - **Long Press & Drag:** Long-press until blue to grab and drag.
-  - **Two-Finger Scroll:** Smooth vertical scrolling.
-- **Remote Keyboard:** Type text directly from your phone.
-
-## 🛠️ Tech Stacks
-
-RemoteMouse now supports two backends. **Tauri (v2)** is the recommended version for performance and size.
-
-### 🦀 Tauri v2 (Recommended)
-- **Backend:** Rust (Axum, Enigo, Tokio)
-- **Size:** ~7 MB
-- **Performance:** Native thread-level input control.
-
-### ⚛️ Electron (Legacy)
-- **Backend:** Node.js (Express, RobotJS, Menubar)
-- **Size:** ~120 MB
-- **Compatibility:** Traditional desktop wrapper.
+- **🚀 Dual-Backend Architecture**: Choose between the ultra-lightweight **Tauri v2** version (Rust-based) or the feature-rich **Electron** legacy version.
+- **🪄 Premium UI**: Modern glassmorphic popover design for macOS and Windows, with a responsive dark-mode mobile interface.
+- **⚡ Ultra-Low Latency**: Optimized WebSocket communication for near-zero delay between touch and cursor movement.
+- **📱 Mobile Optimized**:
+  - **Fluid Touchpad**: Support for relative movement, left/right clicks, and scrolling.
+  - **Haptic Feedback**: Visual and physical feedback for every interaction.
+  - **Keyboard Integration**: Type on your phone and watch it appear instantly on your computer.
+- **🛡️ Secure & Local**: No internet required. All communication happens over your local Wi-Fi.
 
 ---
 
-## 🚀 Development
+## 🚀 Getting Started
+
+### 1. Download & Install
+Download the latest version for your platform from the [Releases](https://github.com/harshal-mehta-code/RemoteMouse/releases) page.
+- **Tauri Version**: Recommended for performance and small size (~5MB).
+- **Electron Version**: Provided for legacy compatibility.
+
+### 2. Connect
+1. Launch **RemoteMouse Pro** on your computer.
+2. Click the tray icon to reveal the connection QR Code.
+3. Scan the QR code with your phone (ensure you are on the same Wi-Fi).
+4. Start controlling!
+
+---
+
+## 🛠️ Development
 
 ### Prerequisites
-- **Node.js:** v18+
-- **Rust:** (For Tauri version) [Install Rust](https://rustup.rs/)
+- [Node.js](https://nodejs.org/) (LTS)
+- [Rust](https://rust-lang.org/) (for Tauri builds)
+- [Visual Studio Build Tools](https://visualstudio.microsoft.com/visual-cpp-build-tools/) (Windows only, for RobotJS)
 
-### Running Locally
-
-#### Tauri Version (v2)
+### Setup
 ```bash
-npm run tauri:dev
+# Clone the repository
+git clone https://github.com/harshal-mehta-code/RemoteMouse.git
+cd RemoteMouse
+
+# Install dependencies
+npm install
 ```
 
-#### Electron Version
+### Run in Development Mode
 ```bash
+# Run Tauri (Recommended)
+npm run tauri:dev
+
+# Run Electron
 npm run electron:dev
 ```
 
-### Packaging / Building
+---
 
-#### Build Tauri (.dmg / .app)
-```bash
-npm run tauri:build
+## 📂 Project Structure
+```text
+├── assets/             # Branding and icons
+├── src-tauri/          # Rust backend (Tauri v2)
+├── src-electron/       # TypeScript backend (Electron)
+├── src-shared/         # Common frontend and types
+└── .github/            # Automated CI/CD workflows
 ```
 
-#### Build Electron (Make)
-```bash
-npm run electron:make
-```
+---
 
-## 📄 License
+## 📝 License
+Distributed under the MIT License. See `LICENSE` for more information.
 
-ISC License. Feel free to use and modify for personal or commercial projects.
+---
+
+<p align="center">
+  Built with ❤️ for a better desktop experience.
+</p>
