@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: rgba(245, 245, 247, 0.4);
+            margin: 0;
+            padding: 15px;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 270px;
+        }
+        h2 { margin-top: 5px; margin-bottom: 10px; color: #1d1d1f; font-size: 16px; font-weight: 600; }
+        p { color: #86868b; font-size: 12px; line-height: 1.3; margin-bottom: 15px; max-width: 240px; }
+        
+        #qr-container {
+            background-color: white;
+            padding: 12px;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+            margin-bottom: 15px;
+            width: 180px;
+            height: 180px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        #url-container { width: 100%; margin-bottom: 15px; }
+        #url-label { font-size: 10px; color: #86868b; margin-bottom: 6px; letter-spacing: 0.5px; }
+        #url {
+            font-family: monospace;
+            background: #ffffff;
+            padding: 10px;
+            border-radius: 8px;
+            font-size: 13px;
+            color: #0066cc;
+            word-break: break-all;
+            border: 1px solid #d2d2d7;
+            cursor: pointer;
+            transition: background 0.2s;
+            position: relative;
+        }
+        #url:active { background: #f0f0f0; }
+        #copy-toast {
+            position: absolute;
+            top: -25px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0,0,0,0.7);
+            color: white;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 10px;
+            display: none;
+        }
+
+        .footer { font-size: 11px; color: #86868b; margin-top: 10px; padding-bottom: 10px; }
+        .quit-btn {
+            font-size: 12px;
+            color: #ff3b30;
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 5px 10px;
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <h2>Remote Touchpad v2</h2>
+    <p>Scan to connect instantly from your iPhone.</p>
+    
+    <div id="qr-container">
+        <div id="qrcode"></div>
+    </div>
+
+    <div id="url-container">
+        <div id="url-label">Direct URL (Click to copy)</div>
+        <div id="url" onclick="copyUrl()">
+            <span id="url-text">Detecting IP...</span>
+            <div id="copy-toast">Copied!</div>
+        </div>
+        <div id="error-log" style="color: #ff3b30; font-size: 11px; margin-top: 10px; font-weight: 500;"></div>
+    </div>
+
+    <div class="footer">
+        <button class="quit-btn" onclick="quitApp()">Quit App</button>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <script>
+        function displayError(msg) {
+            const log = document.getElementById('error-log');
+            if (log) {
+                log.innerText = msg;
+                log.style.display = 'block';
+            }
+            console.error("APP_ERROR: " + msg);
+        }
+
+        let tauriInvoke = null;
+
+        window.onerror = function(msg, url, line) {
+            displayError("JS Error: " + msg + " at " + line);
+            return false;
+        };
+
+        // Initialize Tauri API
+        (async function() {
+            const tauri = window.__TAURI__;
+            if (!tauri) {
+                // Wait a bit more if not found immediately
+                await new Promise(r => setTimeout(r, 200));
+            }
+            
+            const finalTauri = window.__TAURI__;
+            if (!finalTauri) {
+                displayError("Tauri API not found.");
+                return;
+            }
+
+            tauriInvoke = finalTauri.core ? finalTauri.core.invoke : finalTauri.invoke;
+            const getCurrentWindow = finalTauri.window ? finalTauri.window.getCurrentWindow : null;
+
+            if (getCurrentWindow) {
+                try {
+                    const appWindow = getCurrentWindow();
+                    // Robust blur handling
+                    if (appWindow && appWindow.listen) {
+                        appWindow.listen('tauri://blur', () => {
+                            appWindow.hide().catch(console.error);
+                        });
+                    }
+                } catch (e) {
+                    console.warn("Blur listener failed", e);
+                }
+            }
+
+            if (tauriInvoke) {
+                try {
+                    const info = await tauriInvoke('get_connection_info');
+                    document.getElementById('url-text').innerText = info.url;
+                    
+                    const QRCodeLib = window.QRCode || (typeof QRCode !== 'undefined' ? QRCode : null);
+                    if (QRCodeLib) {
+                        const qrContainer = document.getElementById("qrcode");
+                        qrContainer.innerHTML = ''; 
+                        new QRCodeLib(qrContainer, {
+                            text: info.url,
+                            width: 160,
+                            height: 160
+                        });
+                    }
+                } catch (err) {
+                    displayError("Init failed: " + err);
+                }
+            }
+        })();
+
+        async function quitApp() {
+            try {
+                const tauri = window.__TAURI__;
+                const invoke = tauriInvoke || (tauri ? (tauri.core ? tauri.core.invoke : tauri.invoke) : null);
+                if (invoke) {
+                    await invoke('quit_app');
+                } else {
+                    window.close();
+                }
+            } catch (e) {
+                displayError("Quit failed: " + e);
+            }
+        }
+
+        async function copyUrl() {
+            const text = document.getElementById('url-text').innerText;
+            if (text && text !== 'Detecting IP...') {
+                await navigator.clipboard.writeText(text);
+                const toast = document.getElementById('copy-toast');
+                toast.style.display = 'block';
+                setTimeout(() => { toast.style.display = 'none'; }, 2000);
+            }
+        }
+    </script>
+</body>
+</html>

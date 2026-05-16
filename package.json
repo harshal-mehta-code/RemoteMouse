@@ -5,11 +5,12 @@
   "description": "",
   "main": "dist/main.js",
   "scripts": {
-    "start": "node build.js && electron dist/main.js",
-    "build": "node build.js",
-    "package": "node build.js && electron-forge package",
-    "make": "node build.js && electron-forge make",
-    "dev": "node build.js && electron dist/main.js",
+    "dev": "tauri dev",
+    "build": "tauri build",
+    "tauri:dev": "tauri dev",
+    "tauri:build": "tauri build",
+    "electron:dev": "node build.js && electron dist/main.js",
+    "electron:make": "node build.js && electron-forge make",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "config": {
@@ -77,6 +78,7 @@
     "@electron-forge/maker-squirrel": "^7.11.1",
     "@electron-forge/maker-zip": "^7.11.1",
     "@electron-forge/plugin-auto-unpack-natives": "^7.11.1",
+    "@tauri-apps/cli": "^2.11.0",
     "@electron/rebuild": "^4.0.4",
     "electron": "^34.5.8",
     "esbuild": "^0.28.0"
