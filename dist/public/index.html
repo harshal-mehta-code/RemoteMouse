@@ -3,30 +3,43 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Remote Touchpad</title>
+    <title>RemoteMouse Pro</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <div id="touchpad">
-        <div id="status">Connecting...</div>
-        <div class="instructions">
-            <span>Tap for left click</span><br>
-            <span>2-finger tap for right click</span>
+    <header>
+        <div class="status-container" id="connection-status">
+            <div id="status-dot"></div>
+            <span id="status">Connecting...</span>
         </div>
-    </div>
-    <div id="controls">
-        <div class="button-row">
-            <button id="session-toggle">Disconnect</button>
-            <button id="keyboard-toggle">Keyboard</button>
+        <div class="action-btns">
+            <button id="keyboard-toggle" class="icon-btn" title="Toggle Keyboard">
+                <svg viewBox="0 0 24 24"><path d="M20,5H4C2.89,5 2,5.89 2,7V17A2,2 0 0,0 4,19H20A2,2 0 0,0 22,17V7C22,5.89 21.1,5 20,5M20,17H4V7H20V17M12,10H10V8H12V10M12,13H10V11H12V13M15,10H13V8H15V10M15,13H13V11H15V13M18,10H16V8H18V10M18,13H16V11H18V13M9,10H7V8H9V10M9,13H7V11H9V13M17,16H7V14H17V16Z" /></svg>
+            </button>
+            <button id="session-toggle" class="icon-btn" title="Disconnect">
+                <svg viewBox="0 0 24 24"><path d="M12,3C17.5,3 22,6.58 22,11C22,15.42 17.5,19 12,19C10.76,19 9.57,18.82 8.47,18.5L5.55,21L4.5,20.33L5.17,17.22C3.25,15.71 2,13.5 2,11C2,6.58 6.5,3 12,3M12,5C7.58,5 4,7.69 4,11C4,13.19 5.39,15.14 7.5,16.22L7.13,17.9L8.82,16.47L9.75,16.74C10.47,16.91 11.22,17 12,17C16.42,17 20,14.31 20,11C20,7.69 16.42,5 12,5Z" /></svg>
+            </button>
         </div>
-        <div id="keyboard-container" class="hidden">
-            <input type="text" id="keyboard-input" placeholder="Type here..." autocapitalize="off" autocorrect="off" spellcheck="false">
-        </div>
+    </header>
+
+    <main id="touchpad">
+        <!-- Touch interaction happens here -->
+    </main>
+
+    <footer class="controls">
         <div class="slider-group">
-            <label for="sensitivity">Sensitivity</label>
-            <input type="range" id="sensitivity" min="0.1" max="5.0" step="0.1" value="2.0">
+            <div class="label-group">
+                <span>Sensitivity</span>
+                <span id="sensitivity-val">1.0x</span>
+            </div>
+            <input type="range" id="sensitivity" min="0.1" max="3.0" step="0.1" value="1.0">
         </div>
+    </footer>
+
+    <div id="keyboard-container">
+        <input type="text" id="keyboard-input" placeholder="Type here..." autocomplete="off" autocapitalize="off" spellcheck="false">
     </div>
+
     <script src="client.js"></script>
 </body>
 </html>

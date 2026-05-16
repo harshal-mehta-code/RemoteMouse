@@ -1,7 +1,9 @@
 let socket = null;
 const touchpad = document.getElementById('touchpad');
-const status = document.getElementById('status');
+const statusText = document.getElementById('status');
+const statusContainer = document.getElementById('connection-status');
 const sensitivitySlider = document.getElementById('sensitivity');
+const sensitivityVal = document.getElementById('sensitivity-val');
 const sessionToggle = document.getElementById('session-toggle');
 const keyboardToggle = document.getElementById('keyboard-toggle');
 const keyboardContainer = document.getElementById('keyboard-container');
@@ -24,9 +26,15 @@ let pendingDx = 0;
 let pendingDy = 0;
 let pendingScrollY = 0;
 
+function haptic(type = 'light') {
+    if (!navigator.vibrate) return;
+    if (type === 'light') navigator.vibrate(10);
+    else if (type === 'medium') navigator.vibrate(30);
+    else if (type === 'heavy') navigator.vibrate(60);
+}
+
 function connect() {
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    // Smart detection: if we are on port 3005, it's Tauri, otherwise use the current host (Electron)
     const wsUrl = window.location.port === '3005' 
         ? `${protocol}//${window.location.hostname}:3005/ws`
         : `${protocol}//${window.location.host}`;
@@ -35,19 +43,16 @@ function connect() {
     socket = new WebSocket(wsUrl);
 
     socket.onopen = () => {
-        status.innerText = 'Connected';
-        status.style.color = '#4caf50';
-        sessionToggle.innerText = 'Disconnect';
-        sessionToggle.classList.remove('disconnected');
+        statusText.innerText = 'Connected';
+        statusContainer.classList.add('connected');
+        haptic('medium');
     };
 
     socket.onclose = () => {
-        status.innerText = 'Disconnected';
-        status.style.color = '#f44336';
-        sessionToggle.innerText = 'Connect';
-        sessionToggle.classList.add('disconnected');
+        statusText.innerText = 'Disconnected';
+        statusContainer.classList.remove('connected');
         // Auto-reconnect
-        setTimeout(connect, 2000);
+        setTimeout(connect, 3000);
     };
 
     socket.onerror = (error) => {
@@ -63,7 +68,12 @@ function emit(event, data) {
 
 connect();
 
+sensitivitySlider.addEventListener('input', (e) => {
+    sensitivityVal.innerText = `${e.target.value}x`;
+});
+
 sessionToggle.addEventListener('click', () => {
+    haptic('light');
     if (socket && socket.readyState === WebSocket.OPEN) {
         socket.close();
     } else {
@@ -72,9 +82,12 @@ sessionToggle.addEventListener('click', () => {
 });
 
 keyboardToggle.addEventListener('click', () => {
-    const isHidden = keyboardContainer.classList.toggle('hidden');
-    if (!isHidden) {
+    haptic('light');
+    const isActive = keyboardContainer.classList.toggle('active');
+    if (isActive) {
         keyboardInput.focus();
+    } else {
+        keyboardInput.blur();
     }
 });
 
@@ -82,16 +95,19 @@ keyboardInput.addEventListener('input', (e) => {
     const text = e.target.value;
     if (text.length > 0) {
         emit('keyboardType', { text: text });
-        e.target.value = ''; // Clear for next character/string
+        e.target.value = '';
+        haptic('light');
     }
 });
 
 keyboardInput.addEventListener('keydown', (e) => {
     if (e.key === 'Backspace') {
         emit('keyboardTap', { key: 'backspace' });
+        haptic('light');
     } else if (e.key === 'Enter') {
         emit('keyboardTap', { key: 'enter' });
         e.target.value = '';
+        haptic('medium');
     }
 });
 
@@ -120,7 +136,7 @@ touchpad.addEventListener('touchstart', (e) => {
     if (!socket || socket.readyState !== WebSocket.OPEN) return;
 
     isTouching = true;
-    touchpad.style.backgroundColor = '#3c3c3c'; 
+    touchpad.style.background = 'radial-gradient(circle at center, #3a3a3a 0%, #121212 100%)'; 
     fingerCount = e.touches.length;
     
     const touch = e.touches[0];
@@ -130,14 +146,13 @@ touchpad.addEventListener('touchstart', (e) => {
     startTouchTime = Date.now();
     moveCount = 0;
 
-    // Handle Long Press for Dragging
     if (fingerCount === 1) {
         dragTimeout = setTimeout(() => {
             if (moveCount < 5 && isTouching) {
                 isDragging = true;
                 emit('mouseDown', { button: 'left' });
-                touchpad.style.backgroundColor = '#007aff'; // Blue feedback for dragging
-                if (navigator.vibrate) navigator.vibrate(50);
+                touchpad.style.background = 'radial-gradient(circle at center, #007aff44 0%, #121212 100%)'; 
+                haptic('heavy');
             }
         }, 500);
     }
@@ -184,23 +199,27 @@ touchpad.addEventListener('touchend', (e) => {
     if (isDragging) {
         emit('mouseUp', { button: 'left' });
         isDragging = false;
+        haptic('light');
     } else if (socket && socket.readyState === WebSocket.OPEN && duration < 300 && moveCount < 10) {
         if (fingerCount === 1) {
             if (now - lastTapTime < 300) {
                 emit('mouseClick', { button: 'left', double: true });
-                lastTapTime = 0; // Reset
+                lastTapTime = 0;
+                haptic('medium');
             } else {
                 emit('mouseClick', { button: 'left' });
                 lastTapTime = now;
+                haptic('light');
             }
         } else if (fingerCount === 2) {
             emit('mouseClick', { button: 'right' });
+            haptic('medium');
         }
     }
     
     if (e.touches.length === 0) {
         isTouching = false;
-        touchpad.style.backgroundColor = '#2c2c2c'; 
+        touchpad.style.background = 'radial-gradient(circle at center, #252525 0%, #121212 100%)'; 
         fingerCount = 0;
         pendingDx = 0;
         pendingDy = 0;
@@ -209,6 +228,3 @@ touchpad.addEventListener('touchend', (e) => {
         fingerCount = e.touches.length;
     }
 });
-
-// Start connection
-connect();
