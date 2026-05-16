@@ -3,14 +3,14 @@
   "productName": "RemoteMouse",
   "version": "1.0.0",
   "description": "",
-  "main": "main.js",
+  "main": "dist/main.js",
   "scripts": {
     "dev": "tauri dev",
     "build": "tauri build",
     "tauri:dev": "tauri dev",
     "tauri:build": "tauri build",
-    "electron:dev": "electron-forge start",
-    "electron:make": "electron-forge make",
+    "electron:dev": "node build.js && electron dist/main.js",
+    "electron:make": "node build.js && electron-forge make",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "config": {
@@ -18,14 +18,25 @@
       "packagerConfig": {
         "name": "RemoteMouse",
         "asar": true,
-        "icon": "iconTemplate"
+        "icon": "iconTemplate",
+        "ignore": [
+          "^/\\.git$",
+          "^/src-tauri$",
+          "^/public$",
+          "^/server$",
+          "^/main\\.js$",
+          "^/build\\.js$",
+          "^/README\\.md$",
+          "^/tray-popover\\.html$"
+        ]
       },
       "rebuildConfig": {},
       "makers": [
         {
           "name": "@electron-forge/maker-zip",
           "platforms": [
-            "darwin"
+            "darwin",
+            "win32"
           ]
         },
         {
@@ -33,6 +44,10 @@
           "config": {
             "name": "RemoteMouse"
           }
+        },
+        {
+          "name": "@electron-forge/maker-squirrel",
+          "config": {}
         }
       ],
       "plugins": [
@@ -48,20 +63,24 @@
   "license": "ISC",
   "type": "commonjs",
   "dependencies": {
-    "express": "^5.2.1",
     "menubar": "^9.5.2",
-    "mouse-macos": "^0.2.1",
-    "node-mac-permissions": "^2.5.0",
     "qrcode": "^1.5.4",
-    "robotjs": "^0.7.0",
-    "socket.io": "^4.8.3"
+    "robotjs": "^0.7.1",
+    "ws": "^8.18.0"
+  },
+  "optionalDependencies": {
+    "mouse-macos": "^0.2.1",
+    "node-mac-permissions": "^2.5.0"
   },
   "devDependencies": {
     "@electron-forge/cli": "^7.11.1",
     "@electron-forge/maker-dmg": "^7.11.1",
+    "@electron-forge/maker-squirrel": "^7.11.1",
     "@electron-forge/maker-zip": "^7.11.1",
     "@electron-forge/plugin-auto-unpack-natives": "^7.11.1",
     "@tauri-apps/cli": "^2.11.0",
-    "electron": "^34.5.8"
+    "@electron/rebuild": "^4.0.4",
+    "electron": "^34.5.8",
+    "esbuild": "^0.28.0"
   }
 }

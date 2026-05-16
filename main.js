@@ -39,7 +39,9 @@ ipcMain.on('quit-app', () => {
 
 const iconPath = path.join(__dirname, 'iconTemplate.png');
 const trayIcon = nativeImage.createFromPath(iconPath);
-trayIcon.setTemplateImage(true);
+if (process.platform === 'darwin') {
+    trayIcon.setTemplateImage(true);
+}
 
 const mb = menubar({
     index: `file://${path.join(__dirname, 'tray-popover.html')}`,
@@ -50,8 +52,10 @@ const mb = menubar({
         show: false,
         frame: false,
         transparent: true,
-        vibrancy: 'under-window',
-        visualEffectState: 'active',
+        ...(process.platform === 'darwin' ? {
+            vibrancy: 'under-window',
+            visualEffectState: 'active'
+        } : {}),
         webPreferences: {
             nodeIntegration: true,
             contextIsolation: false
@@ -65,11 +69,6 @@ const mb = menubar({
 mb.on('ready', () => {
     console.log('--- REMOTE TOUCHPAD READY ---');
     
-    // Ensure the icon is treated as a template image for macOS
-    const trayIcon = nativeImage.createFromPath(path.join(__dirname, 'iconTemplate.png'));
-    trayIcon.setTemplateImage(true);
-    mb.tray.setImage(trayIcon);
-
     // Add standard context menu on right click
     const { Menu } = require('electron');
     const contextMenu = Menu.buildFromTemplate([

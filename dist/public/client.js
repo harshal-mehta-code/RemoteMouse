@@ -26,12 +26,8 @@ let pendingScrollY = 0;
 
 function connect() {
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    // Smart detection: if we are on port 3005, it's Tauri, otherwise use the current host (Electron)
-    const wsUrl = window.location.port === '3005' 
-        ? `${protocol}//${window.location.hostname}:3005/ws`
-        : `${protocol}//${window.location.host}`;
+    const wsUrl = `${protocol}//${window.location.host}`;
     
-    console.log("Connecting to:", wsUrl);
     socket = new WebSocket(wsUrl);
 
     socket.onopen = () => {
@@ -46,8 +42,6 @@ function connect() {
         status.style.color = '#f44336';
         sessionToggle.innerText = 'Connect';
         sessionToggle.classList.add('disconnected');
-        // Auto-reconnect
-        setTimeout(connect, 2000);
     };
 
     socket.onerror = (error) => {
@@ -82,11 +76,7 @@ keyboardInput.addEventListener('input', (e) => {
     const text = e.target.value;
     if (text.length > 0) {
         emit('keyboardType', { text: text });
-<<<<<<< HEAD
-        e.target.value = ''; 
-=======
         e.target.value = ''; // Clear for next character/string
->>>>>>> origin/master
     }
 });
 
@@ -121,11 +111,8 @@ requestAnimationFrame(update);
 
 touchpad.addEventListener('touchstart', (e) => {
     e.preventDefault();
-<<<<<<< HEAD
-=======
     if (!socket || socket.readyState !== WebSocket.OPEN) return;
 
->>>>>>> origin/master
     isTouching = true;
     touchpad.style.backgroundColor = '#3c3c3c'; 
     fingerCount = e.touches.length;
@@ -143,11 +130,7 @@ touchpad.addEventListener('touchstart', (e) => {
             if (moveCount < 5 && isTouching) {
                 isDragging = true;
                 emit('mouseDown', { button: 'left' });
-<<<<<<< HEAD
-                touchpad.style.backgroundColor = '#007aff'; 
-=======
                 touchpad.style.backgroundColor = '#007aff'; // Blue feedback for dragging
->>>>>>> origin/master
                 if (navigator.vibrate) navigator.vibrate(50);
             }
         }, 500);
@@ -155,11 +138,7 @@ touchpad.addEventListener('touchstart', (e) => {
 });
 
 touchpad.addEventListener('touchmove', (e) => {
-<<<<<<< HEAD
-    if (!isTouching) return;
-=======
     if (!isTouching || !socket || socket.readyState !== WebSocket.OPEN) return;
->>>>>>> origin/master
     e.preventDefault();
     
     const touch = e.touches[0];
@@ -171,6 +150,7 @@ touchpad.addEventListener('touchmove', (e) => {
     
     moveCount++;
     
+    // Cancel drag timeout if we moved too much before it triggered
     if (moveCount > 5 && dragTimeout) {
         clearTimeout(dragTimeout);
         dragTimeout = null;
@@ -199,19 +179,12 @@ touchpad.addEventListener('touchend', (e) => {
     if (isDragging) {
         emit('mouseUp', { button: 'left' });
         isDragging = false;
-<<<<<<< HEAD
-    } else if (duration < 300 && moveCount < 10) {
-=======
     } else if (socket && socket.readyState === WebSocket.OPEN && duration < 300 && moveCount < 10) {
->>>>>>> origin/master
         if (fingerCount === 1) {
+            // Check for double tap
             if (now - lastTapTime < 300) {
                 emit('mouseClick', { button: 'left', double: true });
-<<<<<<< HEAD
-                lastTapTime = 0; 
-=======
                 lastTapTime = 0; // Reset
->>>>>>> origin/master
             } else {
                 emit('mouseClick', { button: 'left' });
                 lastTapTime = now;
@@ -232,6 +205,3 @@ touchpad.addEventListener('touchend', (e) => {
         fingerCount = e.touches.length;
     }
 });
-
-// Start connection
-connect();
