@@ -5,7 +5,7 @@
   "build": {
     "beforeDevCommand": "",
     "beforeBuildCommand": "",
-    "frontendDist": "../public"
+    "frontendDist": "../src-shared/public"
   },
   "app": {
     "windows": [
@@ -40,7 +40,7 @@
     "active": true,
     "targets": "all",
     "resources": [
-      "../public/*"
+      "../src-shared/public/*"
     ],
     "icon": [
       "icons/32x32.png",

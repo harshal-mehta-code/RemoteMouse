@@ -21,31 +21,32 @@ async function build() {
   // Build main process
   await esbuild.build({
     ...commonOptions,
-    entryPoints: ['main.js'],
-    outfile: 'dist/main.js',
+    entryPoints: [path.join('src-electron', 'main.js')],
+    outfile: path.join('dist', 'main.js'),
   });
 
   // Build server logic
   await esbuild.build({
     ...commonOptions,
-    entryPoints: ['server/index.js'],
-    outfile: 'dist/server/index.js',
+    entryPoints: [path.join('src-electron', 'server', 'index.js')],
+    outfile: path.join('dist', 'server', 'index.js'),
   });
 
   // Copy public assets
+  const publicSrc = path.join('src-shared', 'public');
   const distPublic = path.join('dist', 'public');
   if (!fs.existsSync(distPublic)) {
     fs.mkdirSync(distPublic, { recursive: true });
   }
   
-  const publicFiles = fs.readdirSync('public');
+  const publicFiles = fs.readdirSync(publicSrc);
   for (const file of publicFiles) {
-    fs.copyFileSync(path.join('public', file), path.join(distPublic, file));
+    fs.copyFileSync(path.join(publicSrc, file), path.join(distPublic, file));
   }
 
   // Copy other necessary files
-  fs.copyFileSync('public/tray-popover.html', 'dist/tray-popover.html');
-  fs.copyFileSync('iconTemplate.png', 'dist/iconTemplate.png');
+  fs.copyFileSync(path.join(publicSrc, 'tray-popover.html'), path.join('dist', 'tray-popover.html'));
+  fs.copyFileSync(path.join('assets', 'iconTemplate.png'), path.join('dist', 'iconTemplate.png'));
   
   // Create a minimal package.json for the dist folder
   const originalPkg = JSON.parse(fs.readFileSync('package.json', 'utf8'));

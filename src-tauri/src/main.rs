@@ -173,8 +173,12 @@ fn start_axum_server(app_handle: AppHandle, tx: Sender<EnigoEvent>) {
         if up_path.exists() {
             public_path = up_path;
         } else if let Ok(cwd) = std::env::current_dir() {
-            if cwd.join("public").exists() {
-                public_path = cwd.join("public");
+            if cwd.join("src-shared").join("public").exists() {
+                public_path = cwd.join("src-shared").join("public");
+            } else if let Some(parent) = cwd.parent() {
+                if parent.join("src-shared").join("public").exists() {
+                    public_path = parent.join("src-shared").join("public");
+                }
             }
         }
     }

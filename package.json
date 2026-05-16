@@ -9,8 +9,8 @@
     "build": "tauri build",
     "tauri:dev": "tauri dev",
     "tauri:build": "tauri build",
-    "electron:dev": "node build.js && electron dist/main.js",
-    "electron:make": "node build.js && electron-forge make",
+    "electron:dev": "node src-electron/build.js && electron dist/main.js",
+    "electron:make": "node src-electron/build.js && electron-forge make",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "config": {
@@ -22,12 +22,11 @@
         "ignore": [
           "^/\\.git$",
           "^/src-tauri$",
-          "^/public$",
-          "^/server$",
-          "^/main\\.js$",
-          "^/build\\.js$",
+          "^/src-electron$",
+          "^/src-shared$",
+          "^/assets$",
           "^/README\\.md$",
-          "^/tray-popover\\.html$"
+          "^/package-lock\\.json$"
         ]
       },
       "rebuildConfig": {},
