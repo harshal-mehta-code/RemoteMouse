@@ -2,3 +2,6 @@ node_modules/
 .DS_Store
 out/
 src-tauri/target/
+dist/
+src-shared/public/client.js
+.env

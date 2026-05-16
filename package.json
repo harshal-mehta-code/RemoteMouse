@@ -7,8 +7,9 @@
   "scripts": {
     "dev": "tauri dev",
     "build": "tauri build",
-    "tauri:dev": "tauri dev",
-    "tauri:build": "tauri build",
+    "build:frontend": "esbuild src-shared/public/client.ts --bundle --outfile=src-shared/public/client.js --platform=browser",
+    "tauri:dev": "npm run build:frontend && tauri dev",
+    "tauri:build": "npm run build:frontend && tauri build",
     "electron:dev": "node src-electron/build.js && electron dist/main.js",
     "electron:make": "node src-electron/build.js && electron-forge make",
     "test": "echo \"Error: no test specified\" && exit 1"
@@ -79,7 +80,11 @@
     "@electron-forge/plugin-auto-unpack-natives": "^7.11.1",
     "@electron/rebuild": "^4.0.4",
     "@tauri-apps/cli": "^2.11.0",
+    "@types/node": "^25.8.0",
+    "@types/qrcode": "^1.5.6",
+    "@types/ws": "^8.18.1",
     "electron": "^42.1.0",
-    "esbuild": "^0.28.0"
+    "esbuild": "^0.28.0",
+    "typescript": "^6.0.3"
   }
 }

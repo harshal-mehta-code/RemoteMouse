@@ -14,26 +14,32 @@
     -webkit-tap-highlight-color: transparent;
 }
 
+html, body {
+    height: 100%;
+    margin: 0;
+    padding: 0;
+}
+
 body {
     font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
     background-color: var(--bg-dark);
     color: var(--text-main);
-    margin: 0;
-    padding: 0;
     overflow: hidden;
-    height: 100vh;
+    height: 100dvh;
     display: flex;
     flex-direction: column;
 }
 
 /* Header & Status */
 header {
-    padding: 20px;
+    padding: 15px 20px;
+    padding-top: max(15px, env(safe-area-inset-top));
     display: flex;
     justify-content: space-between;
     align-items: center;
     background: var(--glass);
     backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
     border-bottom: 1px solid var(--border);
     z-index: 10;
 }
@@ -91,9 +97,11 @@ header {
 
 /* Controls Overlay */
 .controls {
-    padding: 20px;
+    padding: 15px 20px;
+    padding-bottom: max(15px, env(safe-area-inset-bottom));
     background: var(--glass);
     backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
     border-top: 1px solid var(--border);
     display: grid;
     grid-template-columns: 1fr auto;
@@ -162,7 +170,29 @@ input[type=range]::-webkit-slider-thumb {
 
 .icon-btn:active {
     background: var(--accent);
-    transform: scale(0.95);
+    transform: scale(0.92);
+    box-shadow: 0 0 15px var(--accent);
+}
+
+@keyframes ripple {
+    0% { transform: scale(1); opacity: 1; }
+    100% { transform: scale(1.5); opacity: 0; }
+}
+
+.icon-btn::after {
+    content: '';
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 50%;
+    transform: scale(0);
+    opacity: 0;
+    pointer-events: none;
+}
+
+.icon-btn:active::after {
+    animation: ripple 0.4s ease-out;
 }
 
 .icon-btn svg {

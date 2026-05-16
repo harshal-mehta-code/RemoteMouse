@@ -21,15 +21,23 @@ async function build() {
   // Build main process
   await esbuild.build({
     ...commonOptions,
-    entryPoints: [path.join('src-electron', 'main.js')],
+    entryPoints: [path.join('src-electron', 'main.ts')],
     outfile: path.join('dist', 'main.js'),
   });
 
   // Build server logic
   await esbuild.build({
     ...commonOptions,
-    entryPoints: [path.join('src-electron', 'server', 'index.js')],
+    entryPoints: [path.join('src-electron', 'server', 'index.ts')],
     outfile: path.join('dist', 'server', 'index.js'),
+  });
+
+  // Build frontend client
+  await esbuild.build({
+    ...commonOptions,
+    platform: 'browser',
+    entryPoints: [path.join('src-shared', 'public', 'client.ts')],
+    outfile: path.join('dist', 'public', 'client.js'),
   });
 
   // Copy public assets
@@ -41,6 +49,7 @@ async function build() {
   
   const publicFiles = fs.readdirSync(publicSrc);
   for (const file of publicFiles) {
+    if (file.endsWith('.ts')) continue;
     fs.copyFileSync(path.join(publicSrc, file), path.join(distPublic, file));
   }
 
