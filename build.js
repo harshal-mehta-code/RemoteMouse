@@ -43,7 +43,7 @@ async function build() {
   }
 
   // Copy other necessary files
-  fs.copyFileSync('tray-popover.html', 'dist/tray-popover.html');
+  fs.copyFileSync('public/tray-popover.html', 'dist/tray-popover.html');
   fs.copyFileSync('iconTemplate.png', 'dist/iconTemplate.png');
   
   // Create a minimal package.json for the dist folder
@@ -59,8 +59,8 @@ async function build() {
         'ws': originalPkg.dependencies.ws
     },
     optionalDependencies: {
-        'mouse-macos': originalPkg.dependencies['mouse-macos'],
-        'node-mac-permissions': originalPkg.dependencies['node-mac-permissions']
+        'mouse-macos': originalPkg.optionalDependencies['mouse-macos'],
+        'node-mac-permissions': originalPkg.optionalDependencies['node-mac-permissions']
     }
   };
   fs.writeFileSync('dist/package.json', JSON.stringify(distPkg, null, 2));

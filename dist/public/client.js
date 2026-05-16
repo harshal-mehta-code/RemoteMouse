@@ -26,8 +26,12 @@ let pendingScrollY = 0;
 
 function connect() {
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    const wsUrl = `${protocol}//${window.location.host}`;
+    // Smart detection: if we are on port 3005, it's Tauri, otherwise use the current host (Electron)
+    const wsUrl = window.location.port === '3005' 
+        ? `${protocol}//${window.location.hostname}:3005/ws`
+        : `${protocol}//${window.location.host}`;
     
+    console.log("Connecting to:", wsUrl);
     socket = new WebSocket(wsUrl);
 
     socket.onopen = () => {
@@ -42,6 +46,8 @@ function connect() {
         status.style.color = '#f44336';
         sessionToggle.innerText = 'Connect';
         sessionToggle.classList.add('disconnected');
+        // Auto-reconnect
+        setTimeout(connect, 2000);
     };
 
     socket.onerror = (error) => {
@@ -150,7 +156,6 @@ touchpad.addEventListener('touchmove', (e) => {
     
     moveCount++;
     
-    // Cancel drag timeout if we moved too much before it triggered
     if (moveCount > 5 && dragTimeout) {
         clearTimeout(dragTimeout);
         dragTimeout = null;
@@ -181,7 +186,6 @@ touchpad.addEventListener('touchend', (e) => {
         isDragging = false;
     } else if (socket && socket.readyState === WebSocket.OPEN && duration < 300 && moveCount < 10) {
         if (fingerCount === 1) {
-            // Check for double tap
             if (now - lastTapTime < 300) {
                 emit('mouseClick', { button: 'left', double: true });
                 lastTapTime = 0; // Reset
@@ -205,3 +209,6 @@ touchpad.addEventListener('touchend', (e) => {
         fingerCount = e.touches.length;
     }
 });
+
+// Start connection
+connect();

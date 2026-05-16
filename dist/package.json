@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "main": "main.js",
   "dependencies": {
-    "menubar": "^9.5.2",
+    "menubar": "^5.2.3",
     "qrcode": "^1.5.4",
     "robotjs": "^0.7.1",
     "ws": "^8.18.0"

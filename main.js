@@ -1,4 +1,4 @@
-const { menubar } = require('menubar');
+const menubar = require('menubar');
 const { app, ipcMain, screen, nativeImage } = require('electron');
 const path = require('path');
 const QRCode = require('qrcode');
@@ -45,23 +45,21 @@ if (process.platform === 'darwin') {
 
 const mb = menubar({
     index: `file://${path.join(__dirname, 'tray-popover.html')}`,
-    browserWindow: {
-        width: 300,
-        height: 550,
-        resizable: false,
-        show: false,
-        frame: false,
-        transparent: true,
-        ...(process.platform === 'darwin' ? {
-            vibrancy: 'under-window',
-            visualEffectState: 'active'
-        } : {}),
-        webPreferences: {
-            nodeIntegration: true,
-            contextIsolation: false
-        }
+    width: 300,
+    height: 550,
+    resizable: false,
+    show: false,
+    frame: false,
+    transparent: true,
+    ...(process.platform === 'darwin' ? {
+        vibrancy: 'under-window',
+        visualEffectState: 'active'
+    } : {}),
+    webPreferences: {
+        nodeIntegration: true,
+        contextIsolation: false
     },
-    icon: trayIcon,
+    icon: iconPath,
     preloadWindow: true,
     showDockIcon: false
 });

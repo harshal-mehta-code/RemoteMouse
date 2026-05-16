@@ -63,7 +63,7 @@
   "license": "ISC",
   "type": "commonjs",
   "dependencies": {
-    "menubar": "^9.5.2",
+    "menubar": "^5.2.3",
     "qrcode": "^1.5.4",
     "robotjs": "^0.7.1",
     "ws": "^8.18.0"
@@ -73,14 +73,14 @@
     "node-mac-permissions": "^2.5.0"
   },
   "devDependencies": {
-    "@electron-forge/cli": "^7.11.1",
+    "@electron-forge/cli": "^7.6.1",
     "@electron-forge/maker-dmg": "^7.11.1",
     "@electron-forge/maker-squirrel": "^7.11.1",
     "@electron-forge/maker-zip": "^7.11.1",
     "@electron-forge/plugin-auto-unpack-natives": "^7.11.1",
-    "@tauri-apps/cli": "^2.11.0",
     "@electron/rebuild": "^4.0.4",
-    "electron": "^34.5.8",
+    "@tauri-apps/cli": "^2.11.0",
+    "electron": "^42.1.0",
     "esbuild": "^0.28.0"
   }
 }

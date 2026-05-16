@@ -162,21 +162,19 @@ async fn ws_handler(ws: WebSocketUpgrade, AxumState(tx): AxumState<Sender<EnigoE
 fn start_axum_server(app_handle: AppHandle, tx: Sender<EnigoEvent>) {
     let resource_path = app_handle.path().resource_dir().unwrap_or_else(|_| std::env::current_dir().unwrap());
     
-    let mut public_path = resource_path.join("public");
+    let mut public_path = resource_path.clone();
     
-    if !public_path.exists() {
-        // Check for Tauri's '_up_' prefix (common in bundled apps with relative resource paths)
+    // In dev, it's usually in a 'public' folder. In bundle, it might be flattened.
+    if resource_path.join("public").exists() {
+        public_path = resource_path.join("public");
+    } else if !resource_path.join("index.html").exists() {
+        // Check for Tauri's '_up_' prefix
         let up_path = resource_path.join("_up_").join("public");
         if up_path.exists() {
             public_path = up_path;
         } else if let Ok(cwd) = std::env::current_dir() {
-            // Fallback for development
             if cwd.join("public").exists() {
                 public_path = cwd.join("public");
-            } else if let Some(parent) = cwd.parent() {
-                if parent.join("public").exists() {
-                    public_path = parent.join("public");
-                }
             }
         }
     }
