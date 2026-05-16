@@ -33,13 +33,14 @@ async function build() {
   });
 
   // Copy public assets
-  if (!fs.existsSync('dist/public')) {
-    fs.mkdirSync('dist/public', { recursive: true });
+  const distPublic = path.join('dist', 'public');
+  if (!fs.existsSync(distPublic)) {
+    fs.mkdirSync(distPublic, { recursive: true });
   }
   
   const publicFiles = fs.readdirSync('public');
   for (const file of publicFiles) {
-    fs.copyFileSync(path.join('public', file), path.join('dist/public', file));
+    fs.copyFileSync(path.join('public', file), path.join(distPublic, file));
   }
 
   // Copy other necessary files
@@ -63,7 +64,7 @@ async function build() {
         'node-mac-permissions': originalPkg.optionalDependencies['node-mac-permissions']
     }
   };
-  fs.writeFileSync('dist/package.json', JSON.stringify(distPkg, null, 2));
+  fs.writeFileSync(path.join('dist', 'package.json'), JSON.stringify(distPkg, null, 2));
 
   console.log('Build complete! Output in dist/');
 }
