@@ -6,10 +6,9 @@ use tauri::{
     Manager, AppHandle,
 };
 use axum::{
-    extract::{ws::{Message, WebSocket, WebSocketUpgrade}, State as AxumState},
-    response::IntoResponse,
+    extract::ws::{Message, WebSocket},
     routing::get,
-    Router, http::StatusCode,
+    Router,
 };
 use tower_http::services::ServeDir;
 use enigo::{Enigo, MouseControllable, MouseButton as EnigoButton, KeyboardControllable, Key};
