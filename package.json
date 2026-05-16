@@ -8,6 +8,7 @@
     "dev": "tauri dev",
     "build": "tauri build",
     "build:frontend": "esbuild src-shared/public/client.ts --bundle --outfile=src-shared/public/client.js --platform=browser",
+    "tauri": "tauri",
     "tauri:dev": "npm run build:frontend && tauri dev",
     "tauri:build": "npm run build:frontend && tauri build",
     "electron:dev": "node src-electron/build.js && electron dist/main.js",
