@@ -229,4 +229,72 @@ input[type=range]::-webkit-slider-thumb {
     outline: none;
 }
 
+/* PIN Overlay */
+#pin-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.85);
+    backdrop-filter: blur(15px);
+    -webkit-backdrop-filter: blur(15px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 100;
+    transition: opacity 0.3s ease;
+}
+
+#pin-overlay.hidden {
+    opacity: 0;
+    pointer-events: none;
+}
+
+.pin-card {
+    background: var(--glass);
+    padding: 30px;
+    border-radius: 24px;
+    width: 90%;
+    max-width: 320px;
+    text-align: center;
+    border: 1px solid var(--border);
+}
+
+.pin-card h2 { margin: 0 0 10px 0; font-size: 20px; }
+.pin-card p { color: var(--text-dim); font-size: 13px; margin-bottom: 25px; }
+
+#pin-input {
+    width: 100%;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 15px;
+    color: var(--accent);
+    font-size: 32px;
+    font-weight: 800;
+    letter-spacing: 8px;
+    text-align: center;
+    outline: none;
+    margin-bottom: 20px;
+}
+
+#auth-btn {
+    width: 100%;
+    background: var(--accent);
+    color: white;
+    border: none;
+    padding: 15px;
+    border-radius: 12px;
+    font-weight: 600;
+    font-size: 15px;
+    cursor: pointer;
+}
+
+#auth-btn:active { transform: scale(0.98); }
+
+#auth-status { margin-top: 15px; font-size: 12px; min-height: 1.2em; }
+.error { color: #ff453a; }
+.success { color: #34c759; }
+
 .hidden { display: none !important; }

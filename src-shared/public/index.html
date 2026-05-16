@@ -40,6 +40,18 @@
         <input type="text" id="keyboard-input" placeholder="Type here..." autocomplete="off" autocapitalize="off" spellcheck="false">
     </div>
 
+    <div id="pin-overlay">
+        <div class="pin-card">
+            <h2>Enter Pairing PIN</h2>
+            <p>Enter the 4-digit PIN shown on your computer to connect.</p>
+            <div class="pin-inputs">
+                <input type="number" maxlength="4" id="pin-input" placeholder="0000" pattern="\d*">
+            </div>
+            <button id="auth-btn">Connect</button>
+            <p id="auth-status"></p>
+        </div>
+    </div>
+
     <script src="client.js"></script>
 </body>
 </html>

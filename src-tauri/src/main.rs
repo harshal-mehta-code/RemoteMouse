@@ -9,17 +9,20 @@ use axum::{
     extract::{ws::{Message, WebSocket, WebSocketUpgrade}, State as AxumState},
     response::IntoResponse,
     routing::get,
-    Router,
+    Router, http::StatusCode,
 };
 use tower_http::services::ServeDir;
 use enigo::{Enigo, MouseControllable, MouseButton as EnigoButton, KeyboardControllable, Key};
 use local_ip_address::list_afinet_netifas;
 use serde::Serialize;
+use std::sync::{Arc, Mutex};
 use std::sync::mpsc::{channel, Sender};
+use rand::Rng;
 
 #[derive(Clone, Serialize)]
 struct ConnectionInfo {
     url: String,
+    pin: String,
 }
 
 #[derive(Clone)]
@@ -34,32 +37,34 @@ enum EnigoEvent {
 }
 
 struct AppState {
-    #[allow(dead_code)]
-    tx: Sender<EnigoEvent>,
+    pin: String,
+    authenticated_clients: Mutex<std::collections::HashSet<String>>,
 }
 
-#[tauri::command]
-async fn get_connection_info() -> Result<ConnectionInfo, String> {
-    let network_interfaces = list_afinet_netifas().map_err(|e| e.to_string())?;
-    
-    let mut backup_ip = String::from("localhost");
-    
+fn get_ip_address() -> String {
+    let network_interfaces = list_afinet_netifas().unwrap_or_default();
     for (_name, ip) in network_interfaces {
         if ip.is_ipv4() && !ip.is_loopback() {
             let ip_str = ip.to_string();
             if ip_str.starts_with("192.168.") || ip_str.starts_with("10.") {
-                return Ok(ConnectionInfo { url: format!("http://{}:3005", ip_str) });
+                return ip_str;
             }
-            backup_ip = ip_str;
         }
     }
-    
-    Ok(ConnectionInfo { url: format!("http://{}:3005", backup_ip) })
+    "127.0.0.1".to_string()
+}
+
+#[tauri::command]
+fn get_connection_info(state: tauri::State<Arc<AppState>>) -> serde_json::Value {
+    let ip = get_ip_address();
+    serde_json::json!({
+        "url": format!("http://{}:3005", ip),
+        "pin": state.pin.clone()
+    })
 }
 
 #[tauri::command]
 fn check_accessibility() -> bool {
-    // For now, return true. On macOS, Enigo will just fail or the OS will prompt.
     true
 }
 
@@ -90,13 +95,30 @@ fn start_enigo_worker() -> Sender<EnigoEvent> {
     tx
 }
 
-async fn handle_socket(mut socket: WebSocket, tx: Sender<EnigoEvent>) {
-    println!("New WebSocket connection established");
+async fn handle_socket(mut socket: WebSocket, tx: Sender<EnigoEvent>, state: Arc<AppState>, client_id: String) {
+    println!("New WebSocket connection: {}", client_id);
+    let mut authenticated = false;
+
     while let Some(Ok(msg)) = socket.recv().await {
         if let Message::Text(text) = msg {
             if let Ok(val) = serde_json::from_str::<serde_json::Value>(&text) {
                 let event = val["event"].as_str().unwrap_or("");
                 let data = &val["data"];
+
+                if !authenticated {
+                    if event == "auth" {
+                        let provided_pin = data["pin"].as_str().unwrap_or("");
+                        if provided_pin == state.pin {
+                            authenticated = true;
+                            state.authenticated_clients.lock().unwrap().insert(client_id.clone());
+                            println!("Client authenticated: {}", client_id);
+                            let _ = socket.send(Message::Text(serde_json::json!({ "event": "auth_success" }).to_string())).await;
+                        } else {
+                            let _ = socket.send(Message::Text(serde_json::json!({ "event": "auth_error", "data": { "message": "Invalid PIN" } }).to_string())).await;
+                        }
+                    }
+                    continue;
+                }
 
                 match event {
                     "mouseMove" => {
@@ -155,58 +177,46 @@ async fn handle_socket(mut socket: WebSocket, tx: Sender<EnigoEvent>) {
     }
 }
 
-async fn ws_handler(ws: WebSocketUpgrade, AxumState(tx): AxumState<Sender<EnigoEvent>>) -> impl IntoResponse {
-    ws.on_upgrade(move |socket| handle_socket(socket, tx))
-}
-
-fn start_axum_server(app_handle: AppHandle, tx: Sender<EnigoEvent>) {
-    let resource_path = app_handle.path().resource_dir().unwrap_or_else(|_| std::env::current_dir().unwrap());
-    
-    let mut public_path = resource_path.clone();
-    
-    // In dev, it's usually in a 'public' folder. In bundle, it might be flattened.
-    if resource_path.join("public").exists() {
-        public_path = resource_path.join("public");
-    } else if !resource_path.join("index.html").exists() {
-        // Check for Tauri's '_up_' prefix
-        let up_path = resource_path.join("_up_").join("public");
-        if up_path.exists() {
-            public_path = up_path;
-        } else if let Ok(cwd) = std::env::current_dir() {
-            if cwd.join("src-shared").join("public").exists() {
-                public_path = cwd.join("src-shared").join("public");
-            } else if let Some(parent) = cwd.parent() {
-                if parent.join("src-shared").join("public").exists() {
-                    public_path = parent.join("src-shared").join("public");
-                }
-            }
-        }
-    }
-
-    println!("Serving public from: {:?}", public_path);
-
-    let app = Router::new()
-        .route("/ws", get(ws_handler))
-        .fallback_service(ServeDir::new(public_path))
-        .with_state(tx);
-
-    std::thread::spawn(move || {
-        let runtime = tokio::runtime::Runtime::new().unwrap();
-        runtime.block_on(async {
-            let listener = tokio::net::TcpListener::bind("0.0.0.0:3005").await.unwrap();
-            axum::serve(listener, app).await.unwrap();
-        });
-    });
-}
-
 fn main() {
-    let tx = start_enigo_worker();
+    let pin = format!("{:04}", rand::thread_rng().gen_range(0..10000));
+    println!("Pairing PIN: {}", pin);
+    
+    let state = Arc::new(AppState {
+        pin,
+        authenticated_clients: Mutex::new(std::collections::HashSet::new()),
+    });
 
     tauri::Builder::default()
-        .manage(AppState { tx: tx.clone() })
+        .manage(state.clone())
         .setup(move |app| {
-            let handle = app.handle();
-            start_axum_server(handle.clone(), tx);
+            let tx = start_enigo_worker();
+            let app_handle = app.handle().clone();
+            let state_clone = state.clone();
+            
+            let resource_path = app_handle.path().resource_dir().unwrap_or_else(|_| std::env::current_dir().unwrap());
+            let public_path = resource_path.join("public");
+
+            std::thread::spawn(move || {
+                let rt = tokio::runtime::Runtime::new().unwrap();
+                rt.block_on(async {
+                    let app_state = state_clone.clone();
+                    let app = Router::new()
+                        .route("/ws", get(move |ws| {
+                            let tx = tx.clone();
+                            let s = app_state.clone();
+                            async move {
+                                ws.on_upgrade(move |socket| {
+                                    let id = uuid::Uuid::new_v4().to_string();
+                                    handle_socket(socket, tx, s, id)
+                                })
+                            }
+                        }))
+                        .fallback_service(ServeDir::new(public_path));
+
+                    let listener = tokio::net::TcpListener::bind("0.0.0.0:3005").await.unwrap();
+                    axum::serve(listener, app).await.unwrap();
+                });
+            });
 
             let quit_i = MenuItem::with_id(app, "quit", "Quit", true, None::<&str>)?;
             let menu = Menu::with_items(app, &[&quit_i])?;
@@ -214,30 +224,20 @@ fn main() {
             let _tray = TrayIconBuilder::new()
                 .menu(&menu)
                 .on_menu_event(|app, event| match event.id.as_ref() {
-                    "quit" => {
-                        app.exit(0);
-                    }
+                    "quit" => { app.exit(0); }
                     _ => {}
                 })
                 .on_tray_icon_event(|tray, event| {
-                    if let TrayIconEvent::Click {
-                        button: MouseButton::Left,
-                        rect,
-                        ..
-                    } = event
-                    {
+                    if let TrayIconEvent::Click { button: MouseButton::Left, rect, .. } = event {
                         let app = tray.app_handle();
                         if let Some(window) = app.get_webview_window("main") {
                             let scale_factor = window.scale_factor().unwrap_or(1.0);
                             let window_size = window.outer_size().unwrap_or(tauri::PhysicalSize::new(300, 500));
-                            
                             let icon_pos = rect.position.to_physical::<f64>(scale_factor);
                             let icon_size = rect.size.to_physical::<f64>(scale_factor);
-                            
                             let icon_center_x = icon_pos.x + (icon_size.width / 2.0);
                             let window_x = icon_center_x - (window_size.width as f64 / 2.0);
                             let window_y = icon_pos.y + icon_size.height;
-                            
                             let _ = window.set_position(tauri::PhysicalPosition::new(window_x, window_y));
                             let _ = window.show();
                             let _ = window.set_focus();

@@ -22,7 +22,14 @@ export interface KeyboardTapData {
     key: string;
 }
 
+export interface AuthData {
+    pin: string;
+}
+
 export type RemoteEvent = 
+    | { event: 'auth'; data: AuthData }
+    | { event: 'auth_success'; data?: any }
+    | { event: 'auth_error'; data: { message: string } }
     | { event: 'mouseMove'; data: MouseMoveData }
     | { event: 'mouseDrag'; data: MouseMoveData }
     | { event: 'mouseClick'; data: MouseClickData }

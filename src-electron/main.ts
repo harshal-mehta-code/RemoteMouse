@@ -18,10 +18,11 @@ if (process.platform === 'darwin') {
     }
 }
 
-const iconPath = path.join(__dirname, 'iconTemplate.png');
-
 let cachedUrl: string | null = null;
 let cachedQrCode: string | null = null;
+const pairingPin = Math.floor(1000 + Math.random() * 9000).toString();
+
+const iconPath = path.join(__dirname, 'iconTemplate.png');
 
 const mb = menubar({
     index: `file://${path.join(__dirname, 'tray-popover.html')}`,
@@ -46,10 +47,10 @@ const mb = menubar({
 
 mb.on('ready', async () => {
     console.log('Window Created.');
-    console.log('--- REMOTE TOUCHPAD READY ---');
+    console.log(`--- REMOTE TOUCHPAD READY (PIN: ${pairingPin}) ---`);
 
     try {
-        const url = await startServer(3000);
+        const url = await startServer(3000, pairingPin);
         cachedUrl = url;
         cachedQrCode = await qrcode.toDataURL(url);
         console.log('QR Code cached.');
@@ -60,9 +61,10 @@ mb.on('ready', async () => {
 
 ipcMain.on('get-connection-info', (event) => {
     if (cachedUrl) {
-        const info: ConnectionInfo = {
+        const info: ConnectionInfo & { pin: string } = {
             url: cachedUrl,
-            qrCodeDataUrl: cachedQrCode || undefined
+            qrCodeDataUrl: cachedQrCode || undefined,
+            pin: pairingPin
         };
         event.reply('connection-info', info);
     }

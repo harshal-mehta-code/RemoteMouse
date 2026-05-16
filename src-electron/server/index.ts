@@ -22,7 +22,7 @@ export function getIPAddress(): string {
     return '0.0.0.0';
 }
 
-export async function startServer(port: number = 3000): Promise<string> {
+export async function startServer(port: number = 3000, pin: string): Promise<string> {
     const ip = getIPAddress();
     const url = `http://${ip}:${port}`;
 
@@ -45,11 +45,25 @@ export async function startServer(port: number = 3000): Promise<string> {
 
     wss.on('connection', (ws: WebSocket) => {
         console.log('Client connected');
+        let authenticated = false;
 
         ws.on('message', (message: string) => {
             try {
-                const data: RemoteEvent = JSON.parse(message);
-                handleEvent(data);
+                const payload: RemoteEvent = JSON.parse(message);
+                
+                if (!authenticated) {
+                    if (payload.event === 'auth') {
+                        if (payload.data.pin === pin) {
+                            authenticated = true;
+                            ws.send(JSON.stringify({ event: 'auth_success' }));
+                        } else {
+                            ws.send(JSON.stringify({ event: 'auth_error', data: { message: 'Invalid PIN' } }));
+                        }
+                    }
+                    return;
+                }
+
+                handleEvent(payload);
             } catch (e) {
                 console.error('Error parsing message:', e);
             }

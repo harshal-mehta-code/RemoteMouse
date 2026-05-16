@@ -100,6 +100,10 @@
             <div id="url" onclick="copyUrl()">
                 <span id="url-text">Detecting...</span>
             </div>
+            <div id="pin-container" style="margin-top: 15px;">
+                <div id="url-label">Pairing PIN</div>
+                <div id="pin" style="font-size: 24px; font-weight: 800; letter-spacing: 4px; color: var(--accent);">----</div>
+            </div>
             <div id="error-log"></div>
         </div>
 
@@ -156,19 +160,20 @@
             if (tauriInvoke) {
                 try {
                     const info = await tauriInvoke('get_connection_info');
-                    updateUI(info.url, null);
+                    updateUI(info.url, null, info.pin);
                 } catch (err) { displayError(err); }
             }
         }
 
         function initElectron(electron) {
             const { ipcRenderer } = electron;
-            ipcRenderer.on('connection-info', (event, info) => updateUI(info.url, info.qrCodeDataUrl));
+            ipcRenderer.on('connection-info', (event, info) => updateUI(info.url, info.qrCodeDataUrl, info.pin));
             ipcRenderer.send('get-connection-info');
         }
 
-        function updateUI(url, qrDataUrl) {
+        function updateUI(url, qrDataUrl, pin) {
             document.getElementById('url-text').innerText = url;
+            if (pin) document.getElementById('pin').innerText = pin;
             const qrContainer = document.getElementById("qrcode");
             qrContainer.innerHTML = ''; 
 
