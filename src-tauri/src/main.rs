@@ -6,24 +6,15 @@ use tauri::{
     Manager, AppHandle,
 };
 use axum::{
-    extract::ws::{Message, WebSocket},
+    extract::ws::{Message, WebSocket, WebSocketUpgrade},
     routing::get,
     Router,
 };
 use tower_http::services::ServeDir;
 use enigo::{Enigo, MouseControllable, MouseButton as EnigoButton, KeyboardControllable, Key};
 use local_ip_address::list_afinet_netifas;
-use serde::Serialize;
 use std::sync::{Arc, Mutex};
 use std::sync::mpsc::{channel, Sender};
-use rand::Rng;
-
-#[derive(Clone, Serialize)]
-struct ConnectionInfo {
-    url: String,
-    pin: String,
-}
-
 #[derive(Clone)]
 enum EnigoEvent {
     MouseMove(i32, i32),
@@ -177,7 +168,7 @@ async fn handle_socket(mut socket: WebSocket, tx: Sender<EnigoEvent>, state: Arc
 }
 
 fn main() {
-    let pin = format!("{:04}", rand::thread_rng().gen_range(0..10000));
+    let pin = format!("{:04}", rand::random_range(0..10000));
     println!("Pairing PIN: {}", pin);
     
     let state = Arc::new(AppState {
@@ -193,14 +184,30 @@ fn main() {
             let state_clone = state.clone();
             
             let resource_path = app_handle.path().resource_dir().unwrap_or_else(|_| std::env::current_dir().unwrap());
-            let public_path = resource_path.join("public");
+            let mut public_path = resource_path.clone();
+
+            // Prioritize source directory in development
+            if let Ok(cwd) = std::env::current_dir() {
+                let shared_public = cwd.join("src-shared").join("public");
+                let parent_shared_public = cwd.parent().map(|p| p.join("src-shared").join("public")).unwrap_or_default();
+                
+                if shared_public.exists() {
+                    public_path = shared_public;
+                } else if parent_shared_public.exists() {
+                    public_path = parent_shared_public;
+                } else if resource_path.join("public").exists() {
+                    public_path = resource_path.join("public");
+                }
+            }
+
+            println!("Serving mobile interface from: {:?}", public_path);
 
             std::thread::spawn(move || {
                 let rt = tokio::runtime::Runtime::new().unwrap();
                 rt.block_on(async {
                     let app_state = state_clone.clone();
                     let app = Router::new()
-                        .route("/ws", get(move |ws| {
+                        .route("/ws", get(move |ws: WebSocketUpgrade| {
                             let tx = tx.clone();
                             let s = app_state.clone();
                             async move {
@@ -231,7 +238,7 @@ fn main() {
                         let app = tray.app_handle();
                         if let Some(window) = app.get_webview_window("main") {
                             let scale_factor = window.scale_factor().unwrap_or(1.0);
-                            let window_size = window.outer_size().unwrap_or(tauri::PhysicalSize::new(300, 500));
+                            let window_size = window.inner_size().unwrap_or(tauri::PhysicalSize::new(300, 720));
                             let icon_pos = rect.position.to_physical::<f64>(scale_factor);
                             let icon_size = rect.size.to_physical::<f64>(scale_factor);
                             let icon_center_x = icon_pos.x + (icon_size.width / 2.0);

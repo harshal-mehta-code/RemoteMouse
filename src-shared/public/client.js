@@ -18,12 +18,17 @@
       var keyboardToggle = document.getElementById("keyboard-toggle");
       var keyboardContainer = document.getElementById("keyboard-container");
       var keyboardInput = document.getElementById("keyboard-input");
+      var pinOverlay = document.getElementById("pin-overlay");
+      var pinInput = document.getElementById("pin-input");
+      var authBtn = document.getElementById("auth-btn");
+      var authStatus = document.getElementById("auth-status");
       var lastX = 0;
       var lastY = 0;
       var isTouching = false;
       var startTouchTime = 0;
       var moveCount = 0;
       var fingerCount = 0;
+      var isAuthenticated = false;
       var lastTapTime = 0;
       var isDragging = false;
       var dragTimeout = null;
@@ -42,13 +47,32 @@
         console.log("Connecting to:", wsUrl);
         socket = new WebSocket(wsUrl);
         socket.onopen = () => {
-          statusText.innerText = "Connected";
+          statusText.innerText = "Connecting...";
           statusContainer.classList.add("connected");
           haptic("medium");
+        };
+        socket.onmessage = (event) => {
+          try {
+            const payload = JSON.parse(event.data);
+            if (payload.event === "auth_success") {
+              isAuthenticated = true;
+              pinOverlay.classList.add("hidden");
+              statusText.innerText = "Connected";
+              haptic("medium");
+            } else if (payload.event === "auth_error") {
+              authStatus.innerText = payload.data.message;
+              authStatus.className = "error";
+              haptic("heavy");
+            }
+          } catch (e) {
+            console.error("Error parsing message:", e);
+          }
         };
         socket.onclose = () => {
           statusText.innerText = "Disconnected";
           statusContainer.classList.remove("connected");
+          isAuthenticated = false;
+          pinOverlay.classList.remove("hidden");
           setTimeout(connect, 3e3);
         };
         socket.onerror = (error) => {
@@ -56,11 +80,22 @@
         };
       }
       function emit(payload) {
-        if (socket && socket.readyState === WebSocket.OPEN) {
+        if (socket && socket.readyState === WebSocket.OPEN && (isAuthenticated || payload.event === "auth")) {
           socket.send(JSON.stringify(payload));
         }
       }
       connect();
+      authBtn.addEventListener("click", () => {
+        const pin = pinInput.value;
+        if (pin.length === 4) {
+          emit({ event: "auth", data: { pin } });
+          authStatus.innerText = "Verifying...";
+          authStatus.className = "";
+        } else {
+          authStatus.innerText = "Enter 4 digits";
+          authStatus.className = "error";
+        }
+      });
       sensitivitySlider.addEventListener("input", (e) => {
         const val = e.target.value;
         sensitivityVal.innerText = `${val}x`;

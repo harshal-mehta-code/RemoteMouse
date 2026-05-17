@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>RemoteMouse Pro</title>
     <link rel="stylesheet" href="style.css">
 </head>
@@ -38,6 +38,18 @@
 
     <div id="keyboard-container">
         <input type="text" id="keyboard-input" placeholder="Type here..." autocomplete="off" autocapitalize="off" spellcheck="false">
+    </div>
+
+    <div id="pin-overlay">
+        <div class="pin-card">
+            <h2>Enter Pairing PIN</h2>
+            <p>Enter the 4-digit PIN shown on your computer to connect.</p>
+            <div class="pin-inputs">
+                <input type="number" maxlength="4" id="pin-input" placeholder="0000" pattern="\d*">
+            </div>
+            <button id="auth-btn">Connect</button>
+            <p id="auth-status"></p>
+        </div>
     </div>
 
     <script src="client.js"></script>

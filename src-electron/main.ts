@@ -27,7 +27,7 @@ const iconPath = path.join(__dirname, 'iconTemplate.png');
 const mb = menubar({
     index: `file://${path.join(__dirname, 'tray-popover.html')}`,
     width: 300,
-    height: 550,
+    height: 500,
     resizable: false,
     show: false,
     frame: false,

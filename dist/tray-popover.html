@@ -13,12 +13,12 @@
             font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
             background-color: transparent;
             margin: 0;
-            padding: 20px;
+            padding: 10px;
             text-align: center;
             display: flex;
             flex-direction: column;
             align-items: center;
-            width: 260px;
+            width: 280px;
             color: var(--text);
             overflow: hidden;
         }
@@ -29,12 +29,12 @@
             -webkit-backdrop-filter: blur(20px) saturate(180%);
             border: 1px solid rgba(255, 255, 255, 0.1);
             border-radius: 24px;
-            padding: 20px;
+            padding: 25px;
             width: 100%;
             box-shadow: 0 10px 30px rgba(0,0,0,0.3);
         }
 
-        h2 { margin: 0 0 8px 0; font-size: 17px; font-weight: 600; letter-spacing: -0.4px; }
+        h2 { margin: 0 0 10px 0; font-size: 18px; font-weight: 600; }
         p { color: var(--text-dim); font-size: 13px; line-height: 1.4; margin: 0 0 20px 0; }
         
         #qr-container {
@@ -42,8 +42,8 @@
             padding: 12px;
             border-radius: 16px;
             margin-bottom: 20px;
-            width: 174px;
-            height: 174px;
+            width: 164px;
+            height: 164px;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -99,6 +99,10 @@
             <div id="url-label">Direct URL</div>
             <div id="url" onclick="copyUrl()">
                 <span id="url-text">Detecting...</span>
+            </div>
+            <div id="pin-container" style="margin-top: 15px;">
+                <div id="url-label">Pairing PIN</div>
+                <div id="pin" style="font-size: 24px; font-weight: 800; letter-spacing: 4px; color: var(--accent);">----</div>
             </div>
             <div id="error-log"></div>
         </div>
@@ -156,19 +160,20 @@
             if (tauriInvoke) {
                 try {
                     const info = await tauriInvoke('get_connection_info');
-                    updateUI(info.url, null);
+                    updateUI(info.url, null, info.pin);
                 } catch (err) { displayError(err); }
             }
         }
 
         function initElectron(electron) {
             const { ipcRenderer } = electron;
-            ipcRenderer.on('connection-info', (event, info) => updateUI(info.url, info.qrCodeDataUrl));
+            ipcRenderer.on('connection-info', (event, info) => updateUI(info.url, info.qrCodeDataUrl, info.pin));
             ipcRenderer.send('get-connection-info');
         }
 
-        function updateUI(url, qrDataUrl) {
+        function updateUI(url, qrDataUrl, pin) {
             document.getElementById('url-text').innerText = url;
+            if (pin) document.getElementById('pin').innerText = pin;
             const qrContainer = document.getElementById("qrcode");
             qrContainer.innerHTML = ''; 
 
