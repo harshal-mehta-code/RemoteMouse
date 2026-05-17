@@ -89,3 +89,15 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           release_id: ${{ needs.build-tauri.outputs.release_id }}
+
+  cleanup-failed-release:
+    needs: [build-tauri, build-electron]
+    if: failure()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Delete Failed Draft Release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          echo "Build failed! Cleaning up draft release and tag..."
+          gh release delete ${{ github.ref_name }} --cleanup-tag -y || echo "Release/tag already deleted or not found."
