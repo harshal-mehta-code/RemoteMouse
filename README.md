@@ -34,6 +34,22 @@ Download the latest version for your platform from the [Releases](https://github
 
 ---
 
+## ⚠️ Common Issues & Troubleshooting
+
+### macOS "App is damaged and can't be opened"
+If you download the `.dmg` release directly from GitHub using a web browser, macOS attaches a strict quarantine flag to the file. Since this app is open-source and not signed with a paid Apple Developer certificate, macOS Gatekeeper may show an error stating the app is **"damaged and should be moved to the Trash."**
+
+**This is entirely normal for unsigned apps.** To bypass this and safely open the app:
+1. Drag `RemoteMouse.app` into your `/Applications` folder.
+2. Open the **Terminal** application.
+3. Run the following command to clear the quarantine flag:
+   ```bash
+   xattr -cr /Applications/RemoteMouse.app
+   ```
+4. You can now launch the app normally!
+
+---
+
 ## 🛠️ Development
 
 ### Prerequisites
