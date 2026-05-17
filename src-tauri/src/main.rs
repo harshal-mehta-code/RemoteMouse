@@ -184,7 +184,7 @@ fn main() {
             let state_clone = state.clone();
             
             let resource_path = app_handle.path().resource_dir().unwrap_or_else(|_| std::env::current_dir().unwrap());
-            let mut public_path = resource_path.clone();
+            let mut public_path = resource_path.join("public");
 
             // Prioritize source directory in development
             if let Ok(cwd) = std::env::current_dir() {
@@ -195,8 +195,6 @@ fn main() {
                     public_path = shared_public;
                 } else if parent_shared_public.exists() {
                     public_path = parent_shared_public;
-                } else if resource_path.join("public").exists() {
-                    public_path = resource_path.join("public");
                 }
             }
 

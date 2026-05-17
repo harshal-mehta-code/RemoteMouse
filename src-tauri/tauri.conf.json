@@ -1,6 +1,6 @@
 {
   "productName": "RemoteMouse",
-  "version": "2.2.4",
+  "version": "2.2.5",
   "identifier": "com.remotemouse.app",
   "build": {
     "beforeDevCommand": "npm run build:frontend",
@@ -39,9 +39,9 @@
   "bundle": {
     "active": true,
     "targets": "all",
-    "resources": [
-      "../src-shared/public/*"
-    ],
+    "resources": {
+      "../src-shared/public": "public"
+    },
     "icon": [
       "icons/32x32.png",
       "icons/128x128.png",
