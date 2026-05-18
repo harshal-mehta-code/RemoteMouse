@@ -12,8 +12,7 @@
 - **🪄 Premium UI**: Modern glassmorphic popover design for macOS and Windows, with a responsive dark-mode mobile interface.
 - **⚡ Ultra-Low Latency**: Optimized WebSocket communication for near-zero delay between touch and cursor movement.
 - **📱 Mobile Optimized**:
-  - **Fluid Touchpad**: Support for relative movement, left/right clicks, and scrolling.
-  - **Haptic Feedback**: Visual and physical feedback for every interaction.
+  - **Fluid Touchpad**: Support for relative movement, left/right clicks, scrolling, pinch multi-touch and more.
   - **Keyboard Integration**: Type on your phone and watch it appear instantly on your computer.
 - **🛡️ Secure & Local**: No internet required. All communication happens over your local Wi-Fi.
 
@@ -93,7 +92,3 @@ npm run electron:dev
 Distributed under the MIT License. See `LICENSE` for more information.
 
 ---
-
-<p align="center">
-  Built with ❤️ for a better desktop experience.
-</p>
