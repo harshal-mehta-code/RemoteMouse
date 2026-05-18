@@ -41,6 +41,12 @@ let pendingScrollY = 0;
 let remainderDx = 0;
 let remainderDy = 0;
 
+// Pinch zoom state
+let lastPinchDistance = 0;
+let pendingZoom = 0;
+let lastTouch1: {x: number, y: number} | null = null;
+let lastTouch2: {x: number, y: number} | null = null;
+
 function haptic(type: 'light' | 'medium' | 'heavy' = 'light') {
     if (!navigator.vibrate) return;
     if (type === 'light') navigator.vibrate(10);
@@ -188,6 +194,12 @@ function update() {
         pendingScrollY = 0;
     }
     
+    if (Math.abs(pendingZoom) > 15) {
+        // Send in discrete chunks to avoid spamming the modifier keys on the backend
+        emit({ event: 'pinchZoom', data: { delta: Math.round(pendingZoom) } });
+        pendingZoom = 0;
+    }
+    
     requestAnimationFrame(update);
 }
 requestAnimationFrame(update);
@@ -219,6 +231,13 @@ touchpad.addEventListener('touchstart', (e) => {
                 haptic('heavy');
             }
         }, 500);
+    } else if (fingerCount === 2) {
+        lastPinchDistance = Math.hypot(
+            e.touches[0].clientX - e.touches[1].clientX,
+            e.touches[0].clientY - e.touches[1].clientY
+        );
+        lastTouch1 = {x: e.touches[0].clientX, y: e.touches[0].clientY};
+        lastTouch2 = {x: e.touches[1].clientX, y: e.touches[1].clientY};
     }
 });
 
@@ -243,23 +262,49 @@ touchpad.addEventListener('touchmove', (e) => {
     if (e.touches.length === 1) {
         pendingDx += dx;
         pendingDy += dy;
-    } else if (e.touches.length === 2) {
-        const now = Date.now();
-        const dt = now - lastTouchTime;
+    } else if (e.touches.length === 2 && lastTouch1 && lastTouch2) {
+        const t1 = e.touches[0];
+        const t2 = e.touches[1];
         
-        let multiplier = 1;
-        // Only accelerate if it's a continuous, recent movement
-        if (dt > 0 && dt < 50) { 
-            const velocity = Math.abs(dy) / dt;
-            if (velocity > 0.5) {
-                // Base 1.0 + scale factor based on speed
-                multiplier = 1 + (velocity - 0.5) * 3;
-                // Cap at 5x speed to prevent crazy jumps
-                multiplier = Math.min(multiplier, 5);
+        const dx1 = t1.clientX - lastTouch1.x;
+        const dy1 = t1.clientY - lastTouch1.y;
+        const dx2 = t2.clientX - lastTouch2.x;
+        const dy2 = t2.clientY - lastTouch2.y;
+        
+        const dotProduct = (dx1 * dx2) + (dy1 * dy2);
+        
+        if (dotProduct < 0) {
+            // Moving in opposite directions: PINCH
+            const newDistance = Math.hypot(t1.clientX - t2.clientX, t1.clientY - t2.clientY);
+            const pinchDelta = newDistance - lastPinchDistance;
+            
+            if (Math.abs(pinchDelta) > 1) {
+                pendingZoom += pinchDelta;
+                lastPinchDistance = newDistance;
             }
+        } else {
+            // Moving in same direction: SCROLL
+            const avgDy = (dy1 + dy2) / 2;
+            
+            const now = Date.now();
+            const dt = now - lastTouchTime;
+            
+            let multiplier = 1;
+            if (dt > 0 && dt < 50) { 
+                const velocity = Math.abs(avgDy) / dt;
+                if (velocity > 0.5) {
+                    multiplier = 1 + (velocity - 0.5) * 3;
+                    multiplier = Math.min(multiplier, 5);
+                }
+            }
+            
+            pendingScrollY += avgDy * multiplier;
+            // Update pinch distance so we don't jump if they switch back to pinching
+            lastPinchDistance = Math.hypot(t1.clientX - t2.clientX, t1.clientY - t2.clientY);
         }
         
-        pendingScrollY += dy * multiplier;
+        lastTouch1 = {x: t1.clientX, y: t1.clientY};
+        lastTouch2 = {x: t2.clientX, y: t2.clientY};
     }
     
     lastTouchTime = Date.now();
@@ -306,6 +351,9 @@ touchpad.addEventListener('touchend', (e) => {
         pendingDx = 0;
         pendingDy = 0;
         pendingScrollY = 0;
+        pendingZoom = 0;
+        lastTouch1 = null;
+        lastTouch2 = null;
     } else {
         fingerCount = e.touches.length;
     }

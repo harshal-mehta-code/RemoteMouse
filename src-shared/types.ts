@@ -26,6 +26,10 @@ export interface AuthData {
     pin: string;
 }
 
+export interface PinchZoomData {
+    delta: number;
+}
+
 export type RemoteEvent = 
     | { event: 'auth'; data: AuthData }
     | { event: 'auth_success'; data?: any }
@@ -37,7 +41,8 @@ export type RemoteEvent =
     | { event: 'mouseUp'; data: MouseClickData }
     | { event: 'mouseScroll'; data: MouseScrollData }
     | { event: 'keyboardType'; data: KeyboardTypeData }
-    | { event: 'keyboardTap'; data: KeyboardTapData };
+    | { event: 'keyboardTap'; data: KeyboardTapData }
+    | { event: 'pinchZoom'; data: PinchZoomData };
 
 export interface ConnectionInfo {
     url: string;

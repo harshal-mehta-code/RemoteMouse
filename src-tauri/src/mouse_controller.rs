@@ -18,6 +18,7 @@ pub trait MouseController {
     fn mouse_scroll(&mut self, dy: i32);
     fn keyboard_type(&mut self, text: &str);
     fn keyboard_tap(&mut self, key: Key);
+    fn pinch_zoom(&mut self, delta: i32);
 }
 
 /// Production implementation of [`MouseController`] backed by the `enigo` crate.
@@ -61,5 +62,12 @@ impl MouseController for EnigoController {
 
     fn keyboard_tap(&mut self, key: Key) {
         self.enigo.key_click(key);
+    }
+
+    fn pinch_zoom(&mut self, delta: i32) {
+        let modifier = if cfg!(target_os = "macos") { Key::Meta } else { Key::Control };
+        self.enigo.key_down(modifier);
+        self.enigo.mouse_scroll_y(delta);
+        self.enigo.key_up(modifier);
     }
 }

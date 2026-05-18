@@ -1,6 +1,6 @@
 [package]
 name = "remotemouse"
-version = "2.3.0"
+version = "2.4.0"
 description = "RemoteMouse v2 - Lightweight Tauri Edition"
 authors = ["Harshal"]
 edition = "2021"

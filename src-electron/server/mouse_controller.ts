@@ -44,6 +44,13 @@ export class RobotJsController implements MouseController {
             case 'keyboardTap':
                 robot.keyTap(data.key);
                 break;
+            case 'pinchZoom': {
+                const modifier = process.platform === 'darwin' ? 'command' : 'control';
+                robot.keyToggle(modifier, 'down');
+                robot.scrollMouse(0, data.delta);
+                robot.keyToggle(modifier, 'up');
+                break;
+            }
         }
     }
 }

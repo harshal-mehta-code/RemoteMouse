@@ -27,6 +27,7 @@ pub enum InputEvent {
     MouseScroll(i32),
     KeyboardType(String),
     KeyboardTap(Key),
+    PinchZoom(i32),
 }
 
 // ---------------------------------------------------------------------------
@@ -76,6 +77,7 @@ fn dispatch_event(controller: &mut dyn MouseController, event: InputEvent) {
         InputEvent::MouseScroll(dy) => controller.mouse_scroll(dy),
         InputEvent::KeyboardType(text) => controller.keyboard_type(&text),
         InputEvent::KeyboardTap(key) => controller.keyboard_tap(key),
+        InputEvent::PinchZoom(delta) => controller.pinch_zoom(delta),
     }
 }
 
@@ -184,6 +186,10 @@ fn route_event(event: &str, data: &serde_json::Value, tx: &Sender<InputEvent>) {
                     let _ = tx.send(InputEvent::KeyboardTap(k));
                 }
             }
+        }
+        "pinchZoom" => {
+            let delta = data["delta"].as_f64().unwrap_or(0.0) as i32;
+            let _ = tx.send(InputEvent::PinchZoom(delta));
         }
         _ => {}
     }
