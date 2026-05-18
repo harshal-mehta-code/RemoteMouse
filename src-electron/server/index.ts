@@ -2,18 +2,21 @@ import * as http from 'http';
 import * as fs from 'fs';
 import * as path from 'path';
 import { WebSocketServer, WebSocket } from 'ws';
-import * as robot from 'robotjs';
-import * as qrcode from 'qrcode';
 import { networkInterfaces } from 'os';
 import { RemoteEvent } from '../../src-shared/types';
+import { AuthGuard } from './auth';
+import { RobotJsController } from './mouse_controller';
+
+// ---------------------------------------------------------------------------
+// IP discovery
+// ---------------------------------------------------------------------------
 
 export function getIPAddress(): string {
     const interfaces = networkInterfaces();
     for (const devName in interfaces) {
         const iface = interfaces[devName];
         if (!iface) continue;
-        for (let i = 0; i < iface.length; i++) {
-            const alias = iface[i];
+        for (const alias of iface) {
             if (alias.family === 'IPv4' && alias.address !== '127.0.0.1' && !alias.internal) {
                 return alias.address;
             }
@@ -22,48 +25,39 @@ export function getIPAddress(): string {
     return '0.0.0.0';
 }
 
+// ---------------------------------------------------------------------------
+// Server entry point
+// ---------------------------------------------------------------------------
+
 export async function startServer(port: number = 3000, pin: string): Promise<string> {
     const ip = getIPAddress();
     const url = `http://${ip}:${port}`;
 
+    // HTTP file server — serves the shared mobile UI from the public directory.
     const server = http.createServer((req, res) => {
         const publicDir = path.join(__dirname, 'public');
-        let filePath = path.join(publicDir, req.url === '/' ? 'index.html' : req.url!);
+        const filePath = path.join(publicDir, req.url === '/' ? 'index.html' : req.url!);
 
         fs.readFile(filePath, (err, data) => {
-            if (err) {
-                res.writeHead(404);
-                res.end(JSON.stringify(err));
-                return;
-            }
+            if (err) { res.writeHead(404); res.end(JSON.stringify(err)); return; }
             res.writeHead(200);
             res.end(data);
         });
     });
 
+    // WebSocket server — one AuthGuard + one RobotJsController per connection.
     const wss = new WebSocketServer({ server });
+    const controller = new RobotJsController();
 
     wss.on('connection', (ws: WebSocket) => {
         console.log('Client connected');
-        let authenticated = false;
+        const auth = new AuthGuard(pin, ws);
 
-        ws.on('message', (message: string) => {
+        ws.on('message', (message: Buffer | string) => {
             try {
-                const payload: RemoteEvent = JSON.parse(message);
-                
-                if (!authenticated) {
-                    if (payload.event === 'auth') {
-                        if (payload.data.pin === pin) {
-                            authenticated = true;
-                            ws.send(JSON.stringify({ event: 'auth_success' }));
-                        } else {
-                            ws.send(JSON.stringify({ event: 'auth_error', data: { message: 'Invalid PIN' } }));
-                        }
-                    }
-                    return;
-                }
-
-                handleEvent(payload);
+                const payload: RemoteEvent = JSON.parse(message.toString());
+                if (!auth.handleMessage(payload)) return;
+                controller.processEvent(payload);
             } catch (e) {
                 console.error('Error parsing message:', e);
             }
@@ -72,36 +66,6 @@ export async function startServer(port: number = 3000, pin: string): Promise<str
 
     server.listen(port);
     console.log(`Server live at ${url}`);
-
     return url;
 }
 
-function handleEvent(payload: RemoteEvent) {
-    const { event, data } = payload;
-
-    switch (event) {
-        case 'mouseMove':
-        case 'mouseDrag':
-            const mouse = robot.getMousePos();
-            robot.moveMouse(mouse.x + (data as any).dx, mouse.y + (data as any).dy);
-            break;
-        case 'mouseClick':
-            robot.mouseClick((data as any).button, (data as any).double);
-            break;
-        case 'mouseDown':
-            robot.mouseToggle('down', (data as any).button);
-            break;
-        case 'mouseUp':
-            robot.mouseToggle('up', (data as any).button);
-            break;
-        case 'mouseScroll':
-            robot.scrollMouse(0, (data as any).deltaY);
-            break;
-        case 'keyboardType':
-            robot.typeString((data as any).text);
-            break;
-        case 'keyboardTap':
-            robot.keyTap((data as any).key);
-            break;
-    }
-}
