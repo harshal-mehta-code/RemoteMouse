@@ -18,8 +18,11 @@ const authStatus = document.getElementById('auth-status') as HTMLElement;
 
 let lastX = 0;
 let lastY = 0;
+let startX = 0;
+let startY = 0;
 let isTouching = false;
 let startTouchTime = 0;
+let lastTouchTime = 0;
 let moveCount = 0;
 let fingerCount = 0;
 let isAuthenticated = false;
@@ -33,6 +36,10 @@ let dragTimeout: any = null;
 let pendingDx = 0;
 let pendingDy = 0;
 let pendingScrollY = 0;
+
+// Sub-pixel accumulator
+let remainderDx = 0;
+let remainderDy = 0;
 
 function haptic(type: 'light' | 'medium' | 'heavy' = 'light') {
     if (!navigator.vibrate) return;
@@ -158,7 +165,20 @@ function update() {
     
     if (pendingDx !== 0 || pendingDy !== 0) {
         const event = isDragging ? 'mouseDrag' : 'mouseMove';
-        emit({ event, data: { dx: pendingDx * sensitivity, dy: pendingDy * sensitivity } } as RemoteEvent);
+        
+        const rawDx = (pendingDx * sensitivity) + remainderDx;
+        const rawDy = (pendingDy * sensitivity) + remainderDy;
+        
+        const intDx = Math.round(rawDx);
+        const intDy = Math.round(rawDy);
+        
+        remainderDx = rawDx - intDx;
+        remainderDy = rawDy - intDy;
+
+        if (intDx !== 0 || intDy !== 0) {
+            emit({ event, data: { dx: intDx, dy: intDy } } as RemoteEvent);
+        }
+        
         pendingDx = 0;
         pendingDy = 0;
     }
@@ -183,8 +203,11 @@ touchpad.addEventListener('touchstart', (e) => {
     const touch = e.touches[0];
     lastX = touch.clientX;
     lastY = touch.clientY;
+    startX = touch.clientX;
+    startY = touch.clientY;
     
     startTouchTime = Date.now();
+    lastTouchTime = Date.now();
     moveCount = 0;
 
     if (fingerCount === 1) {
@@ -221,8 +244,25 @@ touchpad.addEventListener('touchmove', (e) => {
         pendingDx += dx;
         pendingDy += dy;
     } else if (e.touches.length === 2) {
-        pendingScrollY += dy;
+        const now = Date.now();
+        const dt = now - lastTouchTime;
+        
+        let multiplier = 1;
+        // Only accelerate if it's a continuous, recent movement
+        if (dt > 0 && dt < 50) { 
+            const velocity = Math.abs(dy) / dt;
+            if (velocity > 0.5) {
+                // Base 1.0 + scale factor based on speed
+                multiplier = 1 + (velocity - 0.5) * 3;
+                // Cap at 5x speed to prevent crazy jumps
+                multiplier = Math.min(multiplier, 5);
+            }
+        }
+        
+        pendingScrollY += dy * multiplier;
     }
+    
+    lastTouchTime = Date.now();
 });
 
 touchpad.addEventListener('touchend', (e) => {
@@ -236,12 +276,13 @@ touchpad.addEventListener('touchend', (e) => {
 
     const duration = Date.now() - startTouchTime;
     const now = Date.now();
+    const distance = Math.hypot(lastX - startX, lastY - startY);
     
     if (isDragging) {
         emit({ event: 'mouseUp', data: { button: 'left' } });
         isDragging = false;
         haptic('light');
-    } else if (socket && socket.readyState === WebSocket.OPEN && duration < 300 && moveCount < 10) {
+    } else if (socket && socket.readyState === WebSocket.OPEN && duration < 300 && distance < 10) {
         if (fingerCount === 1) {
             if (now - lastTapTime < 300) {
                 emit({ event: 'mouseClick', data: { button: 'left', double: true } });
