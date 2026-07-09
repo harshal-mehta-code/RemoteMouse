@@ -36,7 +36,9 @@ export class RobotJsController implements MouseController {
                 robot.mouseToggle('up', data.button);
                 break;
             case 'mouseScroll':
-                robot.scrollMouse(0, data.deltaY);
+                // Match the Tauri backend's scaling (src-tauri/src/network.rs) so
+                // scroll speed/direction feel identical across both backends.
+                robot.scrollMouse(0, Math.round(-data.deltaY / 10));
                 break;
             case 'keyboardType':
                 robot.typeString(data.text);

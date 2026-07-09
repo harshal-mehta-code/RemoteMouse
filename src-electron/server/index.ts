@@ -11,7 +11,8 @@ import { RobotJsController } from './mouse_controller';
 // IP discovery
 // ---------------------------------------------------------------------------
 
-export function getIPAddress(): string {
+/** Return the first non-internal LAN IPv4 address, or `null` if none exists. */
+export function getIPAddress(): string | null {
     const interfaces = networkInterfaces();
     for (const devName in interfaces) {
         const iface = interfaces[devName];
@@ -22,28 +23,61 @@ export function getIPAddress(): string {
             }
         }
     }
-    return '0.0.0.0';
+    return null;
+}
+
+// ---------------------------------------------------------------------------
+// Static file serving
+// ---------------------------------------------------------------------------
+
+const MIME_TYPES: Record<string, string> = {
+    '.html': 'text/html; charset=utf-8',
+    '.js': 'application/javascript; charset=utf-8',
+    '.css': 'text/css; charset=utf-8',
+    '.json': 'application/json; charset=utf-8',
+    '.png': 'image/png',
+    '.svg': 'image/svg+xml',
+    '.ico': 'image/x-icon',
+};
+
+/** Serve a single file request from `publicDir`, rejecting any path traversal attempt. */
+function serveStatic(publicDir: string, req: http.IncomingMessage, res: http.ServerResponse): void {
+    const rawUrl = req.url === '/' ? '/index.html' : (req.url || '/index.html');
+    const decodedPath = decodeURIComponent(rawUrl.split('?')[0].split('#')[0]);
+    const resolvedPath = path.normalize(path.join(publicDir, decodedPath));
+
+    // Ensure the resolved path never escapes publicDir (blocks `..` traversal).
+    if (resolvedPath !== publicDir && !resolvedPath.startsWith(publicDir + path.sep)) {
+        res.writeHead(403, { 'Content-Type': 'text/plain' });
+        res.end('Forbidden');
+        return;
+    }
+
+    fs.readFile(resolvedPath, (err, data) => {
+        if (err) {
+            res.writeHead(404, { 'Content-Type': 'text/plain' });
+            res.end('Not found');
+            return;
+        }
+        const ext = path.extname(resolvedPath).toLowerCase();
+        res.writeHead(200, { 'Content-Type': MIME_TYPES[ext] || 'application/octet-stream' });
+        res.end(data);
+    });
 }
 
 // ---------------------------------------------------------------------------
 // Server entry point
 // ---------------------------------------------------------------------------
 
-export async function startServer(port: number = 3000, pin: string): Promise<string> {
+export async function startServer(port: number, pin: string): Promise<string> {
     const ip = getIPAddress();
+    if (!ip) {
+        throw new Error('No Wi-Fi/LAN network was detected. Connect to a network and reopen this menu.');
+    }
     const url = `http://${ip}:${port}`;
+    const publicDir = path.join(__dirname, 'public');
 
-    // HTTP file server — serves the shared mobile UI from the public directory.
-    const server = http.createServer((req, res) => {
-        const publicDir = path.join(__dirname, 'public');
-        const filePath = path.join(publicDir, req.url === '/' ? 'index.html' : req.url!);
-
-        fs.readFile(filePath, (err, data) => {
-            if (err) { res.writeHead(404); res.end(JSON.stringify(err)); return; }
-            res.writeHead(200);
-            res.end(data);
-        });
-    });
+    const server = http.createServer((req, res) => serveStatic(publicDir, req, res));
 
     // WebSocket server — one AuthGuard + one RobotJsController per connection.
     const wss = new WebSocketServer({ server });
@@ -64,8 +98,12 @@ export async function startServer(port: number = 3000, pin: string): Promise<str
         });
     });
 
-    server.listen(port);
-    console.log(`Server live at ${url}`);
-    return url;
+    return new Promise((resolve, reject) => {
+        server.once('error', (err) => reject(err));
+        // Bind only to the detected LAN interface, not all interfaces (0.0.0.0).
+        server.listen(port, ip, () => {
+            console.log(`Server live at ${url}`);
+            resolve(url);
+        });
+    });
 }
-

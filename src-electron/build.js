@@ -13,8 +13,7 @@ async function build() {
     external: [
         'electron',
         'robotjs',
-        'node-mac-permissions',
-        'mouse-macos'
+        'node-mac-permissions'
     ],
   };
 
@@ -70,7 +69,6 @@ async function build() {
         'ws': originalPkg.dependencies.ws
     },
     optionalDependencies: {
-        'mouse-macos': originalPkg.optionalDependencies['mouse-macos'],
         'node-mac-permissions': originalPkg.optionalDependencies['node-mac-permissions']
     }
   };

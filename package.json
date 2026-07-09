@@ -63,7 +63,6 @@
     "ws": "^8.18.0"
   },
   "optionalDependencies": {
-    "mouse-macos": "^0.2.1",
     "node-mac-permissions": "^2.5.0"
   },
   "devDependencies": {

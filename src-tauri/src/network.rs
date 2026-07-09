@@ -138,6 +138,11 @@ async fn handle_socket(
             }
         }
     }
+
+    // Connection closed (client disconnected, network drop, etc.) — stop
+    // tracking it so `authenticated_clients` doesn't grow unbounded.
+    state.authenticated_clients.lock().unwrap().remove(&client_id);
+    println!("WebSocket connection closed: {}", client_id);
 }
 
 /// Parse a validated JSON event and enqueue the corresponding [`InputEvent`].
@@ -177,9 +182,38 @@ fn route_event(event: &str, data: &serde_json::Value, tx: &Sender<InputEvent>) {
             if let Some(key_name) = data["key"].as_str() {
                 let key = match key_name.to_lowercase().as_str() {
                     "backspace" => Some(Key::Backspace),
-                    "enter" => Some(Key::Return),
+                    "enter" | "return" => Some(Key::Return),
                     "tab" => Some(Key::Tab),
-                    "escape" => Some(Key::Escape),
+                    "escape" | "esc" => Some(Key::Escape),
+                    "delete" => Some(Key::Delete),
+                    "space" => Some(Key::Space),
+                    "up" | "arrowup" => Some(Key::UpArrow),
+                    "down" | "arrowdown" => Some(Key::DownArrow),
+                    "left" | "arrowleft" => Some(Key::LeftArrow),
+                    "right" | "arrowright" => Some(Key::RightArrow),
+                    "home" => Some(Key::Home),
+                    "end" => Some(Key::End),
+                    "pageup" => Some(Key::PageUp),
+                    "pagedown" => Some(Key::PageDown),
+                    "control" | "ctrl" => Some(Key::Control),
+                    "alt" => Some(Key::Alt),
+                    "shift" => Some(Key::Shift),
+                    "meta" | "cmd" | "command" | "windows" | "super" => Some(Key::Meta),
+                    "f1" => Some(Key::F1),
+                    "f2" => Some(Key::F2),
+                    "f3" => Some(Key::F3),
+                    "f4" => Some(Key::F4),
+                    "f5" => Some(Key::F5),
+                    "f6" => Some(Key::F6),
+                    "f7" => Some(Key::F7),
+                    "f8" => Some(Key::F8),
+                    "f9" => Some(Key::F9),
+                    "f10" => Some(Key::F10),
+                    "f11" => Some(Key::F11),
+                    "f12" => Some(Key::F12),
+                    "volumeup" => Some(Key::VolumeUp),
+                    "volumedown" => Some(Key::VolumeDown),
+                    "volumemute" | "mute" => Some(Key::VolumeMute),
                     _ => None,
                 };
                 if let Some(k) = key {
@@ -207,7 +241,7 @@ pub async fn run_server(
     state: Arc<AppState>,
     tx: Sender<InputEvent>,
     public_path: PathBuf,
-) {
+) -> std::io::Result<()> {
     let app = Router::new()
         .route(
             "/ws",
@@ -224,7 +258,11 @@ pub async fn run_server(
         )
         .fallback_service(ServeDir::new(public_path));
 
-    let listener = tokio::net::TcpListener::bind("0.0.0.0:3005").await.unwrap();
-    println!("WebSocket server listening on :3005");
-    axum::serve(listener, app).await.unwrap();
+    // Bind only to the detected LAN interface rather than all interfaces
+    // (0.0.0.0), so the control server isn't reachable from every network
+    // adapter on the machine (VPNs, virtual bridges, etc.).
+    let addr = format!("{}:3005", get_ip_address());
+    let listener = tokio::net::TcpListener::bind(&addr).await?;
+    println!("WebSocket server listening on {}", addr);
+    axum::serve(listener, app).await
 }

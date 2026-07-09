@@ -1,5 +1,6 @@
 import { app, nativeImage, ipcMain, BrowserWindow } from 'electron';
 import * as path from 'path';
+import * as crypto from 'crypto';
 import menubar = require('menubar');
 import * as qrcode from 'qrcode';
 import { startServer } from './server/index';
@@ -20,7 +21,8 @@ if (process.platform === 'darwin') {
 
 let cachedUrl: string | null = null;
 let cachedQrCode: string | null = null;
-const pairingPin = Math.floor(1000 + Math.random() * 9000).toString();
+let serverError: string | null = null;
+const pairingPin = crypto.randomInt(0, 10000).toString().padStart(4, '0');
 
 const iconPath = path.join(__dirname, 'iconTemplate.png');
 
@@ -56,6 +58,7 @@ mb.on('ready', async () => {
         console.log('QR Code cached.');
     } catch (err) {
         console.error('Failed to start server:', err);
+        serverError = err instanceof Error ? err.message : 'Failed to start the connection server.';
     }
 });
 
@@ -67,6 +70,8 @@ ipcMain.on('get-connection-info', (event) => {
             pin: pairingPin
         };
         event.reply('connection-info', info);
+    } else if (serverError) {
+        event.reply('connection-error', serverError);
     }
 });
 

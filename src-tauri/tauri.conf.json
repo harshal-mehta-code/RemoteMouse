@@ -1,6 +1,6 @@
 {
   "productName": "RemoteMouse",
-  "version": "2.2.5",
+  "version": "2.4.0",
   "identifier": "com.remotemouse.app",
   "build": {
     "beforeDevCommand": "npm run build:frontend",
@@ -19,7 +19,6 @@
         "alwaysOnTop": true,
         "visible": false,
         "transparent": true,
-        "devtools": true,
         "url": "tray-popover.html",
         "windowEffects": {
           "effects": [

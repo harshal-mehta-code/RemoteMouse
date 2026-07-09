@@ -14,19 +14,14 @@
 * {
     box-sizing: border-box;
     -webkit-tap-highlight-color: transparent;
+    user-select: none;
+    -webkit-user-select: none;
 }
 
 html, body {
     height: 100%;
     margin: 0;
     padding: 0;
-}
-
-* {
-    box-sizing: border-box;
-    -webkit-tap-highlight-color: transparent;
-    user-select: none;
-    -webkit-user-select: none;
 }
 
 body {
@@ -77,31 +72,6 @@ header {
     flex-shrink: 0;
 }
 
-#status-dot {
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
-    background-color: #ff3b30;
-    box-shadow: 0 0 8px rgba(255, 59, 48, 0.5);
-    transition: all 0.3s ease;
-}
-
-.connected #status-dot {
-    background-color: #34c759;
-    box-shadow: 0 0 8px rgba(52, 199, 89, 0.5);
-}
-
-#status {
-    font-size: 13px;
-    font-weight: 500;
-    color: var(--text-dim);
-}
-
-.connected #status {
-    color: var(--text-main);
-}
-
-/* Status Dot */
 #status-dot {
     width: 8px;
     height: 8px;

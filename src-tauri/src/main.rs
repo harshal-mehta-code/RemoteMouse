@@ -55,6 +55,11 @@ fn main() {
                 .unwrap_or_else(|_| std::env::current_dir().unwrap());
             let mut public_path = resource_path.join("public");
 
+            // Dev-only convenience: when running via `tauri dev`, prefer the live
+            // src-shared/public source folder over the bundled resource dir so
+            // frontend edits are picked up without a full rebuild. Never do this
+            // in release builds, where only the bundled resources should be trusted.
+            #[cfg(debug_assertions)]
             if let Ok(cwd) = std::env::current_dir() {
                 let shared = cwd.join("src-shared").join("public");
                 let parent_shared = cwd
@@ -76,7 +81,9 @@ fn main() {
             let state_clone = state.clone();
             std::thread::spawn(move || {
                 let rt = tokio::runtime::Runtime::new().unwrap();
-                rt.block_on(run_server(state_clone, tx, public_path));
+                if let Err(e) = rt.block_on(run_server(state_clone, tx, public_path)) {
+                    eprintln!("Failed to start control server: {}", e);
+                }
             });
 
             // Set up the system-tray icon and popover behaviour.

@@ -168,6 +168,7 @@
         function initElectron(electron) {
             const { ipcRenderer } = electron;
             ipcRenderer.on('connection-info', (event, info) => updateUI(info.url, info.qrCodeDataUrl, info.pin));
+            ipcRenderer.on('connection-error', (event, message) => displayError(message));
             ipcRenderer.send('get-connection-info');
         }
 
