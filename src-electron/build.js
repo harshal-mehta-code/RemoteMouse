@@ -11,11 +11,10 @@ async function build() {
     minify: true,
     platform: 'node',
     external: [
-        'electron',
-        'robotjs',
-        'node-mac-permissions',
-        'mouse-macos'
-    ],
+            'electron',
+            'robotjs',
+            'node-mac-permissions'
+        ],
   };
 
   // Build main process
@@ -70,9 +69,8 @@ async function build() {
         'ws': originalPkg.dependencies.ws
     },
     optionalDependencies: {
-        'mouse-macos': originalPkg.optionalDependencies['mouse-macos'],
-        'node-mac-permissions': originalPkg.optionalDependencies['node-mac-permissions']
-    }
+            'node-mac-permissions': originalPkg.optionalDependencies['node-mac-permissions']
+        }
   };
   fs.writeFileSync(path.join('dist', 'package.json'), JSON.stringify(distPkg, null, 2));
 
