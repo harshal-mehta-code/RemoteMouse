@@ -74,6 +74,52 @@ const PIN_LENGTH = 6;
  */
 const PINCH_EMIT_THRESHOLD = 2;
 
+/** localStorage keys for preferences that persist across sessions. */
+const STORAGE_KEYS = {
+    sensitivity: 'rm.sensitivity',
+    keyboardOpen: 'rm.keyboardOpen',
+} as const;
+
+/**
+ * Read a persisted preference.
+ *
+ * Private browsing and disabled storage make localStorage throw rather than
+ * return null, so every access is guarded — a preference is a nicety and must
+ * never prevent the app from starting.
+ */
+function loadPref(key: string): string | null {
+    try {
+        return localStorage.getItem(key);
+    } catch {
+        return null;
+    }
+}
+
+function savePref(key: string, value: string): void {
+    try {
+        localStorage.setItem(key, value);
+    } catch {
+        /* Storage unavailable — preferences simply will not persist. */
+    }
+}
+
+/** Apply persisted preferences before the first frame renders. */
+function restorePrefs() {
+    const saved = parseFloat(loadPref(STORAGE_KEYS.sensitivity) ?? '');
+    if (Number.isFinite(saved)) {
+        const min = parseFloat(sensitivitySlider.min);
+        const max = parseFloat(sensitivitySlider.max);
+        sensitivitySlider.value = String(Math.min(max, Math.max(min, saved)));
+    }
+    sensitivityVal.innerText = `${sensitivitySlider.value}x`;
+
+    if (loadPref(STORAGE_KEYS.keyboardOpen) === 'true') {
+        keyboardContainer.classList.add('active');
+        keyboardToggle.setAttribute('aria-pressed', 'true');
+    }
+}
+restorePrefs();
+
 function haptic(type: 'light' | 'medium' | 'heavy' = 'light') {
     if (!navigator.vibrate) return;
     if (type === 'light') navigator.vibrate(10);
@@ -165,6 +211,7 @@ authBtn.addEventListener('click', () => {
 sensitivitySlider.addEventListener('input', (e) => {
     const val = (e.target as HTMLInputElement).value;
     sensitivityVal.innerText = `${val}x`;
+    savePref(STORAGE_KEYS.sensitivity, val);
 });
 
 sessionToggle.addEventListener('click', () => {
@@ -179,6 +226,8 @@ sessionToggle.addEventListener('click', () => {
 keyboardToggle.addEventListener('click', () => {
     haptic('light');
     const isActive = keyboardContainer.classList.toggle('active');
+    keyboardToggle.setAttribute('aria-pressed', String(isActive));
+    savePref(STORAGE_KEYS.keyboardOpen, String(isActive));
     if (isActive) {
         keyboardInput.focus();
     } else {
