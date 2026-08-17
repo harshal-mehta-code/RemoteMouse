@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>RemoteMouse Pro</title>
+    <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src ws: wss:">
+    <meta name="theme-color" content="#121212">
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -43,9 +45,9 @@
     <div id="pin-overlay">
         <div class="pin-card">
             <h2>Enter Pairing PIN</h2>
-            <p>Enter the 4-digit PIN shown on your computer to connect.</p>
+            <p>Enter the 6-digit PIN shown on your computer to connect.</p>
             <div class="pin-inputs">
-                <input type="number" maxlength="4" id="pin-input" placeholder="0000" pattern="\d*">
+                <input type="text" inputmode="numeric" maxlength="6" id="pin-input" placeholder="000000" pattern="\d{6}" autocomplete="one-time-code" aria-label="6-digit pairing PIN">
             </div>
             <button id="auth-btn">Connect</button>
             <p id="auth-status"></p>

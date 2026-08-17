@@ -13,8 +13,7 @@ async function build() {
     external: [
         'electron',
         'robotjs',
-        'node-mac-permissions',
-        'mouse-macos'
+        'node-mac-permissions'
     ],
   };
 
@@ -30,6 +29,13 @@ async function build() {
     ...commonOptions,
     entryPoints: [path.join('src-electron', 'server', 'index.ts')],
     outfile: path.join('dist', 'server', 'index.js'),
+  });
+
+  // Build the context-isolation preload bridge
+  await esbuild.build({
+    ...commonOptions,
+    entryPoints: [path.join('src-electron', 'preload.ts')],
+    outfile: path.join('dist', 'preload.js'),
   });
 
   // Build frontend client
@@ -49,12 +55,14 @@ async function build() {
   
   const publicFiles = fs.readdirSync(publicSrc);
   for (const file of publicFiles) {
-    if (file.endsWith('.ts')) continue;
+    // Skip sources and anything esbuild already emitted — copying a stale
+    // client.js here would clobber the bundle built moments ago.
+    if (file.endsWith('.ts') || file === 'client.js') continue;
     fs.copyFileSync(path.join(publicSrc, file), path.join(distPublic, file));
   }
 
-  // Copy other necessary files
-  fs.copyFileSync(path.join(publicSrc, 'tray-popover.html'), path.join('dist', 'tray-popover.html'));
+  // Copy other necessary files. The popover is loaded from dist/public/ so its
+  // relative <script> tags resolve; only the tray icon lives at the dist root.
   fs.copyFileSync(path.join('assets', 'iconTemplate.png'), path.join('dist', 'iconTemplate.png'));
   
   // Create a minimal package.json for the dist folder
@@ -70,7 +78,6 @@ async function build() {
         'ws': originalPkg.dependencies.ws
     },
     optionalDependencies: {
-        'mouse-macos': originalPkg.optionalDependencies['mouse-macos'],
         'node-mac-permissions': originalPkg.optionalDependencies['node-mac-permissions']
     }
   };

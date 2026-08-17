@@ -1,4 +1,4 @@
-import { app, nativeImage, ipcMain, BrowserWindow } from 'electron';
+import { app, ipcMain } from 'electron';
 import * as path from 'path';
 import menubar = require('menubar');
 import * as qrcode from 'qrcode';
@@ -20,14 +20,23 @@ if (process.platform === 'darwin') {
 
 let cachedUrl: string | null = null;
 let cachedQrCode: string | null = null;
-const pairingPin = Math.floor(1000 + Math.random() * 9000).toString();
+let startupError: string | null = null;
+
+const pairingPin = generatePin();
+
+/** Generate a uniformly-distributed 6-digit PIN using a CSPRNG. */
+function generatePin(): string {
+    const { randomInt } = require('crypto') as typeof import('crypto');
+    return randomInt(0, 1_000_000).toString().padStart(6, '0');
+}
 
 const iconPath = path.join(__dirname, 'iconTemplate.png');
 
 const mb = menubar({
-    index: `file://${path.join(__dirname, 'tray-popover.html')}`,
+    // Served from public/ so the popover's sibling scripts resolve relatively.
+    index: `file://${path.join(__dirname, 'public', 'tray-popover.html')}`,
     width: 300,
-    height: 500,
+    height: 520,
     resizable: false,
     show: false,
     frame: false,
@@ -37,8 +46,10 @@ const mb = menubar({
         visualEffectState: 'active'
     } : {}),
     webPreferences: {
-        nodeIntegration: true,
-        contextIsolation: false
+        nodeIntegration: false,
+        contextIsolation: true,
+        sandbox: true,
+        preload: path.join(__dirname, 'preload.js')
     },
     icon: iconPath,
     preloadWindow: true,
@@ -55,19 +66,22 @@ mb.on('ready', async () => {
         cachedQrCode = await qrcode.toDataURL(url);
         console.log('QR Code cached.');
     } catch (err) {
-        console.error('Failed to start server:', err);
+        // Surfaced in the popover instead of leaving it stuck on "Detecting...".
+        startupError = err instanceof Error ? err.message : String(err);
+        console.error('Failed to start server:', startupError);
     }
 });
 
-ipcMain.on('get-connection-info', (event) => {
-    if (cachedUrl) {
-        const info: ConnectionInfo & { pin: string } = {
-            url: cachedUrl,
-            qrCodeDataUrl: cachedQrCode || undefined,
-            pin: pairingPin
-        };
-        event.reply('connection-info', info);
+ipcMain.handle('get-connection-info', (): (ConnectionInfo & { pin: string; error?: string }) | null => {
+    if (startupError) {
+        return { url: '', pin: pairingPin, error: startupError };
     }
+    if (!cachedUrl) return null;
+    return {
+        url: cachedUrl,
+        qrCodeDataUrl: cachedQrCode || undefined,
+        pin: pairingPin
+    };
 });
 
 ipcMain.on('quit-app', () => {
