@@ -2978,9 +2978,10 @@ checksum = "dc897dd8d9e8bd1ed8cdad82b5966c3e0ecae09fb1907d58efaa013543185d0a"
 
 [[package]]
 name = "remotemouse"
-version = "2.0.0"
+version = "2.4.0"
 dependencies = [
  "axum",
+ "core-graphics 0.23.2",
  "enigo",
  "image 0.24.9",
  "local-ip-address",

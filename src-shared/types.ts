@@ -20,6 +20,8 @@ export interface KeyboardTypeData {
 
 export interface KeyboardTapData {
     key: string;
+    /** Modifier keys held while the tap is delivered, e.g. `['command', 'shift']`. */
+    modifiers?: string[];
 }
 
 export interface AuthData {
@@ -42,7 +44,8 @@ export type RemoteEvent =
     | { event: 'mouseScroll'; data: MouseScrollData }
     | { event: 'keyboardType'; data: KeyboardTypeData }
     | { event: 'keyboardTap'; data: KeyboardTapData }
-    | { event: 'pinchZoom'; data: PinchZoomData };
+    | { event: 'pinchZoom'; data: PinchZoomData }
+    | { event: 'pinchEnd'; data?: Record<string, never> };
 
 export interface ConnectionInfo {
     url: string;

@@ -46,6 +46,33 @@ let lastPinchDistance = 0;
 let pendingZoom = 0;
 let lastTouch1: {x: number, y: number} | null = null;
 let lastTouch2: {x: number, y: number} | null = null;
+let isPinching = false;
+
+/**
+ * Tell the backend the pinch is over so it releases the held zoom modifier.
+ * Sent exactly once per gesture.
+ */
+function endPinch() {
+    if (!isPinching) return;
+    isPinching = false;
+    pendingZoom = 0;
+    emit({ event: 'pinchEnd' });
+}
+
+// Reconnect backoff
+const BASE_RECONNECT_MS = 1000;
+const MAX_RECONNECT_MS = 30000;
+let reconnectAttempts = 0;
+
+/** Digits in the pairing PIN. Must match `PIN_DIGITS` in the backends. */
+const PIN_LENGTH = 6;
+
+/**
+ * Minimum accumulated pinch travel, in pixels, before an event is sent.
+ * The backend accumulates fractional zoom steps, so this only needs to be
+ * large enough to filter out jitter — not to gate whole zoom steps.
+ */
+const PINCH_EMIT_THRESHOLD = 2;
 
 function haptic(type: 'light' | 'medium' | 'heavy' = 'light') {
     if (!navigator.vibrate) return;
@@ -74,6 +101,7 @@ function connect() {
             const payload = JSON.parse(event.data);
             if (payload.event === 'auth_success') {
                 isAuthenticated = true;
+                reconnectAttempts = 0;
                 pinOverlay.classList.add('hidden');
                 statusText.innerText = 'Connected';
                 haptic('medium');
@@ -87,17 +115,30 @@ function connect() {
         }
     };
 
-    socket.onclose = () => {
-        statusText.innerText = 'Disconnected';
+    socket.onclose = (event) => {
+        isPinching = false;
+        pendingZoom = 0;
         statusContainer.classList.remove('connected');
         isAuthenticated = false;
         pinOverlay.classList.remove('hidden');
-        // Auto-reconnect
-        setTimeout(connect, 3000);
+
+        // The server closes with 4029 after too many bad PINs and 4001 on idle
+        // timeout — reconnecting immediately would just burn the lockout.
+        const isLockout = event.code === 4029;
+        if (isLockout) {
+            authStatus.innerText = 'Locked out. Wait, then try again.';
+            authStatus.className = 'error';
+        }
+
+        const delay = Math.min(BASE_RECONNECT_MS * 2 ** reconnectAttempts, MAX_RECONNECT_MS);
+        reconnectAttempts++;
+        statusText.innerText = `Reconnecting in ${Math.round(delay / 1000)}s...`;
+        setTimeout(connect, delay);
     };
 
-    socket.onerror = (error) => {
-        console.error('WebSocket Error:', error);
+    socket.onerror = () => {
+        // `onclose` always follows, and owns the retry/backoff decision.
+        statusText.innerText = 'Connection failed';
     };
 }
 
@@ -111,12 +152,12 @@ connect();
 
 authBtn.addEventListener('click', () => {
     const pin = pinInput.value;
-    if (pin.length === 4) {
+    if (pin.length === PIN_LENGTH) {
         emit({ event: 'auth', data: { pin } });
         authStatus.innerText = 'Verifying...';
         authStatus.className = '';
     } else {
-        authStatus.innerText = 'Enter 4 digits';
+        authStatus.innerText = `Enter ${PIN_LENGTH} digits`;
         authStatus.className = 'error';
     }
 });
@@ -194,9 +235,9 @@ function update() {
         pendingScrollY = 0;
     }
     
-    if (Math.abs(pendingZoom) > 15) {
-        // Send in discrete chunks to avoid spamming the modifier keys on the backend
-        emit({ event: 'pinchZoom', data: { delta: Math.round(pendingZoom) } });
+    if (Math.abs(pendingZoom) > PINCH_EMIT_THRESHOLD) {
+        isPinching = true;
+        emit({ event: 'pinchZoom', data: { delta: pendingZoom } });
         pendingZoom = 0;
     }
     
@@ -344,6 +385,10 @@ touchpad.addEventListener('touchend', (e) => {
         }
     }
     
+    if (e.touches.length < 2) {
+        endPinch();
+    }
+
     if (e.touches.length === 0) {
         isTouching = false;
         touchpad.style.background = 'radial-gradient(circle at center, #252525 0%, #121212 100%)'; 
