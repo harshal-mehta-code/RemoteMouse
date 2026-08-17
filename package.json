@@ -39,7 +39,10 @@
       "makers": [
         {
           "name": "@electron-forge/maker-zip",
-          "platforms": ["darwin", "win32"]
+          "platforms": [
+            "darwin",
+            "win32"
+          ]
         },
         {
           "name": "@electron-forge/maker-dmg",
@@ -63,7 +66,7 @@
     "menubar": "^5.2.3",
     "qrcode": "^1.5.4",
     "robotjs": "^0.7.1",
-    "ws": "^8.18.0"
+    "ws": "^8.21.3"
   },
   "optionalDependencies": {
     "node-mac-permissions": "^2.5.0"
