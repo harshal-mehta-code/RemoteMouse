@@ -1,0 +1,35 @@
+name: Feature request
+description: Suggest an improvement or new capability
+labels: ["enhancement"]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: What problem does this solve?
+      description: Describe the use case, not just the proposed solution.
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed solution
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: platforms
+    attributes:
+      label: Which platforms should this work on?
+      description: >
+        Features are expected to work on both macOS and Windows. If it can only
+        work on one, say so and explain what the other should do instead.
+      options:
+        - label: macOS
+        - label: Windows
+        - label: Linux
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered

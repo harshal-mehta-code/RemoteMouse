@@ -1,0 +1,71 @@
+name: Bug report
+description: Something isn't working as expected
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for the report. Input bugs are very platform-specific, so the
+        details below genuinely matter — especially which app you were
+        controlling, since zoom and scroll behave differently in native apps
+        than in browsers.
+
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: What did you expect, and what happened instead?
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Launch RemoteMouse
+        2. Connect from phone
+        3. ...
+    validations:
+      required: true
+
+  - type: dropdown
+    id: backend
+    attributes:
+      label: Which backend?
+      options:
+        - Tauri (recommended build)
+        - Electron (legacy build)
+        - Not sure
+    validations:
+      required: true
+
+  - type: input
+    id: os
+    attributes:
+      label: Computer OS and version
+      placeholder: "macOS 15.3 / Windows 11 23H2"
+    validations:
+      required: true
+
+  - type: input
+    id: phone
+    attributes:
+      label: Phone and browser
+      placeholder: "iPhone 15, Safari / Pixel 8, Chrome"
+    validations:
+      required: true
+
+  - type: input
+    id: target-app
+    attributes:
+      label: Which app were you controlling?
+      description: Required for scroll, zoom, or keyboard bugs.
+      placeholder: "Safari, Photos, VS Code, Finder..."
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Terminal output
+      description: If you ran a dev build, paste any relevant output here.
+      render: shell
