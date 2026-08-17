@@ -14,7 +14,7 @@
 - **📱 Mobile Optimized**:
   - **Fluid Touchpad**: Support for relative movement, left/right clicks, scrolling, pinch multi-touch and more.
   - **Keyboard Integration**: Type on your phone and watch it appear instantly on your computer.
-- **🛡️ Secure & Local**: No internet required. All communication happens over your local Wi-Fi.
+- **🛡️ Secure & Local**: No internet required. All communication happens over your local Wi-Fi, gated behind a 6-digit pairing PIN with brute-force lockout and idle session expiry.
 
 ---
 
@@ -29,7 +29,12 @@ Download the latest version for your platform from the [Releases](https://github
 1. Launch **RemoteMouse Pro** on your computer.
 2. Click the tray icon to reveal the connection QR Code.
 3. Scan the QR code with your phone (ensure you are on the same Wi-Fi).
-4. Start controlling!
+4. Enter the 6-digit pairing PIN shown in the popover.
+5. Start controlling!
+
+> **macOS:** the first launch asks for **Accessibility** permission. Without it the
+> app connects normally but cannot move the cursor — grant it under
+> *System Settings > Privacy & Security > Accessibility*, then restart the app.
 
 ---
 
@@ -75,6 +80,12 @@ npm run tauri:dev
 npm run electron:dev
 ```
 
+### Tests & Checks
+```bash
+npm test          # Node + Rust test suites
+npm run typecheck # TypeScript, no emit
+```
+
 ---
 
 ## 📂 Project Structure
@@ -83,6 +94,7 @@ npm run electron:dev
 ├── src-tauri/          # Rust backend (Tauri v2)
 ├── src-electron/       # TypeScript backend (Electron)
 ├── src-shared/         # Common frontend and types
+├── tests/              # Node test suite (node:test)
 └── .github/            # Automated CI/CD workflows
 ```
 
