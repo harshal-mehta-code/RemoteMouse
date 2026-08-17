@@ -5,3 +5,4 @@ src-tauri/target/
 dist/
 src-shared/public/client.js
 .env
+.test-build/
