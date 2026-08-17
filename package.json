@@ -14,7 +14,10 @@
     "tauri:build": "npm run build:frontend && tauri build",
     "electron:dev": "node src-electron/build.js && electron dist/main.js",
     "electron:make": "node src-electron/build.js && electron-forge make",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "npm run test:node && npm run test:rust",
+    "test:node": "esbuild tests/*.test.ts --bundle --platform=node --outdir=.test-build --alias:robotjs=./tests/robotjs-stub.js && node --test .test-build/*.test.js",
+    "test:rust": "cargo test --manifest-path src-tauri/Cargo.toml",
+    "typecheck": "tsc --noEmit"
   },
   "config": {
     "forge": {
@@ -63,7 +66,6 @@
     "ws": "^8.18.0"
   },
   "optionalDependencies": {
-    "mouse-macos": "^0.2.1",
     "node-mac-permissions": "^2.5.0"
   },
   "devDependencies": {
