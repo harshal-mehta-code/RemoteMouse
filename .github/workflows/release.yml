@@ -31,10 +31,8 @@ jobs:
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
 
-      # robotjs is a native module used only by the Electron backend, and it
-      # is what breaks on windows-latest since the image moved to Visual
-      # Studio 18, which node-gyp does not recognise. The Tauri build never
-      # loads it, so skip native builds rather than compiling it to discard it.
+      # The Tauri backend never loads robotjs, so skip native install scripts
+      # rather than doing work whose output is discarded.
       - name: Install dependencies
         run: npm install --ignore-scripts
 
@@ -53,10 +51,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        # Pinned to windows-2022: this job must compile robotjs, and the
-        # bundled node-gyp cannot detect the Visual Studio 18 that ships on
-        # windows-latest. Revisit when robotjs is replaced.
-        os: [macos-latest, windows-2022]
+        os: [macos-latest, windows-latest]
     runs-on: ${{ matrix.os }}
     steps:
       - name: Checkout repository

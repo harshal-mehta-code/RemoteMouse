@@ -21,8 +21,8 @@ jobs:
           node-version: lts/*
           cache: npm
 
-      # robotjs ships no prebuilt binary and is only needed at runtime; the
-      # tests alias it to a stub, so skip native builds to keep CI green.
+      # The tests alias robotjs to a stub, so the native addon is never loaded
+      # here; skip install scripts rather than unpacking a binary nothing uses.
       - name: Install dependencies
         run: npm install --ignore-scripts
 

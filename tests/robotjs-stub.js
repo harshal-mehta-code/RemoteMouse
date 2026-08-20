@@ -1,8 +1,10 @@
 // Test double for the `robotjs` native addon.
 //
-// robotjs ships no prebuilt binary, so importing the real module in a test run
-// fails on `robotjs.node`. Tests alias the module here and assert on the
-// recorded calls instead of moving the real cursor.
+// Tests alias the module here and assert on the recorded calls, so a test run
+// never moves the real cursor or types into whatever window has focus. The
+// stub is deliberate isolation, not a workaround: robotjs does ship prebuilt
+// binaries, but loading the real addon would make the suite drive the machine
+// running it.
 const calls = [];
 
 module.exports = {
