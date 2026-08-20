@@ -1,7 +1,7 @@
 {
   "name": "remotemouse",
   "productName": "RemoteMouse",
-  "version": "2.4.0",
+  "version": "2.5.0",
   "description": "Remote control your computer from your smartphone with ultra-low latency.",
   "author": "Harshal Mehta",
   "main": "dist/main.js",
