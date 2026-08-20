@@ -121,14 +121,27 @@ fn main() {
             println!("Serving mobile interface from: {:?}", public_path);
 
             // Spin up the Axum HTTP + WebSocket server on its own thread.
-            let tx = start_input_worker();
+            let tx = match start_input_worker() {
+                Ok(tx) => tx,
+                Err(message) => {
+                    // Without an input worker the app can still show its tray
+                    // and PIN, so keep running and report the reason rather
+                    // than dying with an unexplained blank window.
+                    eprintln!("Input worker error: {}", message);
+                    report_startup_error(&app.handle().clone(), message);
+                    return Ok(());
+                }
+            };
             let state_clone = state.clone();
             let app_handle = app.handle().clone();
             std::thread::spawn(move || {
                 let rt = match tokio::runtime::Runtime::new() {
                     Ok(rt) => rt,
                     Err(e) => {
-                        report_startup_error(&app_handle, format!("Could not start runtime: {}", e));
+                        report_startup_error(
+                            &app_handle,
+                            format!("Could not start runtime: {}", e),
+                        );
                         return;
                     }
                 };

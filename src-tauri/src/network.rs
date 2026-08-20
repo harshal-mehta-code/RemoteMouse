@@ -6,7 +6,7 @@ use axum::{
     routing::get,
     Router,
 };
-use enigo::{Key, MouseButton as EnigoButton};
+use enigo::{Button as EnigoButton, Key};
 use local_ip_address::list_afinet_netifas;
 use std::net::{IpAddr, Ipv4Addr, SocketAddr};
 use std::path::PathBuf;
@@ -85,10 +85,29 @@ pub fn get_ip_address() -> Option<String> {
 /// [`InputEvent`]s from the returned channel sender.
 ///
 /// Enigo is not `Send` + `Sync`, so it must live on its own thread.
-pub fn start_input_worker() -> Sender<InputEvent> {
+pub fn start_input_worker() -> Result<Sender<InputEvent>, String> {
     let (tx, rx) = channel::<InputEvent>();
+    // `Enigo` is not `Send`, so it has to be built on the worker thread itself.
+    // This handshake carries the outcome back, so a failure to connect to the
+    // OS input APIs — on macOS, a missing Accessibility grant — surfaces at
+    // startup instead of leaving a server that accepts gestures and drops them.
+    let (ready_tx, ready_rx) = channel::<Result<(), String>>();
+
     std::thread::spawn(move || {
-        let mut controller = EnigoController::new();
+        let mut controller = match EnigoController::new() {
+            Ok(controller) => {
+                let _ = ready_tx.send(Ok(()));
+                controller
+            }
+            Err(err) => {
+                let _ = ready_tx.send(Err(format!(
+                    "Could not connect to the system input APIs: {err}. \
+                     On macOS, grant Accessibility permission and restart."
+                )));
+                return;
+            }
+        };
+
         loop {
             match rx.recv_timeout(ZOOM_RELEASE_TIMEOUT) {
                 Ok(event) => dispatch_event(&mut controller, event),
@@ -99,7 +118,12 @@ pub fn start_input_worker() -> Sender<InputEvent> {
             }
         }
     });
-    tx
+
+    match ready_rx.recv() {
+        Ok(Ok(())) => Ok(tx),
+        Ok(Err(message)) => Err(message),
+        Err(_) => Err("The input worker stopped before it was ready.".to_string()),
+    }
 }
 
 /// Forward an [`InputEvent`] to the [`MouseController`].
@@ -358,7 +382,12 @@ async fn ws_handler(
 ) -> axum::response::Response {
     ws.max_message_size(MAX_FRAME_BYTES)
         .on_upgrade(move |socket| {
-            handle_socket(socket, ctx.tx.clone(), ctx.state.clone(), addr.ip().to_string())
+            handle_socket(
+                socket,
+                ctx.tx.clone(),
+                ctx.state.clone(),
+                addr.ip().to_string(),
+            )
         })
 }
 
@@ -381,13 +410,18 @@ pub async fn run_server(
         .with_state(ctx);
 
     let bind_addr = SocketAddr::from(([0, 0, 0, 0], SERVER_PORT));
-    let listener = tokio::net::TcpListener::bind(bind_addr).await.map_err(|e| {
-        if e.kind() == std::io::ErrorKind::AddrInUse {
-            format!("Port {} is already in use. Close the other app and restart RemoteMouse.", SERVER_PORT)
-        } else {
-            format!("Could not start the server: {}", e)
-        }
-    })?;
+    let listener = tokio::net::TcpListener::bind(bind_addr)
+        .await
+        .map_err(|e| {
+            if e.kind() == std::io::ErrorKind::AddrInUse {
+                format!(
+                    "Port {} is already in use. Close the other app and restart RemoteMouse.",
+                    SERVER_PORT
+                )
+            } else {
+                format!("Could not start the server: {}", e)
+            }
+        })?;
 
     println!("WebSocket server listening on :{}", SERVER_PORT);
     axum::serve(

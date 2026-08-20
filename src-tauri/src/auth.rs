@@ -99,5 +99,9 @@ pub const PIN_DIGITS: usize = 6;
 /// Six digits rather than four: combined with attempt throttling this puts an
 /// exhaustive search well out of reach for a LAN attacker.
 pub fn generate_pin() -> String {
-    format!("{:0width$}", rand::random_range(0..1_000_000u32), width = PIN_DIGITS)
+    format!(
+        "{:0width$}",
+        rand::random_range(0..1_000_000u32),
+        width = PIN_DIGITS
+    )
 }

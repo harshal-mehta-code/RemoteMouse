@@ -84,6 +84,16 @@ work, write a throwaway binary that tries each candidate and observe which one
 actually works, rather than shipping successive guesses. Record the dead ends in
 a comment so the next person doesn't retry them.
 
+**Input runs on a worker thread, so avoid main-thread-only OS APIs.** Every
+event is dispatched on a dedicated input thread, never the UI thread. Some OS
+input APIs assert they are on the main dispatch queue and **abort the process**
+when they are not — `enigo`'s `Key::Unicode` is one, because it resolves the
+character through Carbon's input-source APIs, which killed the app on every
+pinch with an `EXC_BREAKPOINT` out of `dispatch_assert_queue`. Prefer APIs that
+take a physical keycode (`Keyboard::raw`) over ones that consult the active
+keyboard layout. A standalone test binary will not always reproduce this: the
+assertion only fires once the host app has fully initialised the framework.
+
 **Untrusted input.** The server is reachable by anything on the local network.
 Every WebSocket message is schema-validated and size-capped before it reaches
 the OS input layer; new events must be validated in **both** `validation.ts` and
