@@ -31,8 +31,12 @@ jobs:
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
 
+      # robotjs is a native module used only by the Electron backend, and it
+      # is what breaks on windows-latest since the image moved to Visual
+      # Studio 18, which node-gyp does not recognise. The Tauri build never
+      # loads it, so skip native builds rather than compiling it to discard it.
       - name: Install dependencies
-        run: npm install
+        run: npm install --ignore-scripts
 
       - name: Build Tauri App
         id: create_release
@@ -49,7 +53,10 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [macos-latest, windows-latest]
+        # Pinned to windows-2022: this job must compile robotjs, and the
+        # bundled node-gyp cannot detect the Visual Studio 18 that ships on
+        # windows-latest. Revisit when robotjs is replaced.
+        os: [macos-latest, windows-2022]
     runs-on: ${{ matrix.os }}
     steps:
       - name: Checkout repository
@@ -98,9 +105,19 @@ jobs:
     if: failure()
     runs-on: ubuntu-latest
     steps:
+      # `--cleanup-tag` shells out to git, so without a checkout this step
+      # failed with "not a git repository" and the `|| echo` fallback turned
+      # that into a green check, leaving failed releases behind.
+      - name: Checkout
+        uses: actions/checkout@v4
+
       - name: Delete Failed Draft Release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           echo "Build failed! Cleaning up draft release and tag..."
-          gh release delete ${{ github.ref_name }} --cleanup-tag -y || echo "Release/tag already deleted or not found."
+          if ! gh release view ${{ github.ref_name }} >/dev/null 2>&1; then
+            echo "No release for ${{ github.ref_name }}; nothing to clean up."
+            exit 0
+          fi
+          gh release delete ${{ github.ref_name }} --cleanup-tag -y
